@@ -27,11 +27,18 @@ const (
 
 // Country defines model for Country.
 type Country struct {
-	EnglishName *string `json:"english_name,omitempty"`
+	EnglishName string `json:"english_name"`
 
 	// Iso31661 ISO 3166-1 tag
-	Iso31661   *string `json:"iso_3166_1,omitempty"`
+	Iso31661   string  `json:"iso_3166_1"`
 	NativeName *string `json:"native_name,omitempty"`
+}
+
+// Department defines model for Department.
+type Department struct {
+	// Department The name of the department
+	Department string   `json:"department"`
+	Jobs       []string `json:"jobs"`
 }
 
 // Error defines model for Error.
@@ -131,6 +138,9 @@ type ClientInterface interface {
 
 	// ConfigurationCountries request
 	ConfigurationCountries(ctx context.Context, params *ConfigurationCountriesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ConfigurationJobs request
+	ConfigurationJobs(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) ConfigurationDetails(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -147,6 +157,18 @@ func (c *Client) ConfigurationDetails(ctx context.Context, reqEditors ...Request
 
 func (c *Client) ConfigurationCountries(ctx context.Context, params *ConfigurationCountriesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewConfigurationCountriesRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ConfigurationJobs(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewConfigurationJobsRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -233,6 +255,33 @@ func NewConfigurationCountriesRequest(server string, params *ConfigurationCountr
 	return req, nil
 }
 
+// NewConfigurationJobsRequest generates requests for ConfigurationJobs
+func NewConfigurationJobsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/configuration/jobs")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -281,6 +330,9 @@ type ClientWithResponsesInterface interface {
 
 	// ConfigurationCountries request
 	ConfigurationCountriesWithResponse(ctx context.Context, params *ConfigurationCountriesParams, reqEditors ...RequestEditorFn) (*ConfigurationCountriesResponse, error)
+
+	// ConfigurationJobs request
+	ConfigurationJobsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ConfigurationJobsResponse, error)
 }
 
 type ConfigurationDetailsResponse struct {
@@ -340,6 +392,29 @@ func (r ConfigurationCountriesResponse) StatusCode() int {
 	return 0
 }
 
+type ConfigurationJobsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]Department
+	JSON401      *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r ConfigurationJobsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ConfigurationJobsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 // ConfigurationDetailsWithResponse request returning *ConfigurationDetailsResponse
 func (c *ClientWithResponses) ConfigurationDetailsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ConfigurationDetailsResponse, error) {
 	rsp, err := c.ConfigurationDetails(ctx, reqEditors...)
@@ -356,6 +431,15 @@ func (c *ClientWithResponses) ConfigurationCountriesWithResponse(ctx context.Con
 		return nil, err
 	}
 	return ParseConfigurationCountriesResponse(rsp)
+}
+
+// ConfigurationJobsWithResponse request returning *ConfigurationJobsResponse
+func (c *ClientWithResponses) ConfigurationJobsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ConfigurationJobsResponse, error) {
+	rsp, err := c.ConfigurationJobs(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseConfigurationJobsResponse(rsp)
 }
 
 // ParseConfigurationDetailsResponse parses an HTTP response from a ConfigurationDetailsWithResponse call
@@ -435,6 +519,39 @@ func ParseConfigurationCountriesResponse(rsp *http.Response) (*ConfigurationCoun
 	return response, nil
 }
 
+// ParseConfigurationJobsResponse parses an HTTP response from a ConfigurationJobsWithResponse call
+func ParseConfigurationJobsResponse(rsp *http.Response) (*ConfigurationJobsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ConfigurationJobsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []Department
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// Details
@@ -443,6 +560,9 @@ type ServerInterface interface {
 	// Countries
 	// (GET /configuration/countries)
 	ConfigurationCountries(ctx echo.Context, params ConfigurationCountriesParams) error
+	// Jobs
+	// (GET /configuration/jobs)
+	ConfigurationJobs(ctx echo.Context) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -481,6 +601,17 @@ func (w *ServerInterfaceWrapper) ConfigurationCountries(ctx echo.Context) error 
 	return err
 }
 
+// ConfigurationJobs converts echo context to params.
+func (w *ServerInterfaceWrapper) ConfigurationJobs(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.ConfigurationJobs(ctx)
+	return err
+}
+
 // This is a simple interface which specifies echo.Route addition functions which
 // are present on both echo.Echo and echo.Group, since we want to allow using
 // either of them for path registration
@@ -511,29 +642,33 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 
 	router.GET(baseURL+"/configuration", wrapper.ConfigurationDetails)
 	router.GET(baseURL+"/configuration/countries", wrapper.ConfigurationCountries)
+	router.GET(baseURL+"/configuration/jobs", wrapper.ConfigurationJobs)
 
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"H4sIAAAAAAAC/7xXW2/bRhP9K4v58uAAtGhZuSB882cXgdsESeGkQCuowogckRuTu8zu0Iki6L8Xs9SF",
+	"tGRHRdq+LVe7czlzzuxoCamtamvIsIdkCTU6rIjJha83aPIGc5J1Rj51umZtDSTwHr1XqK5v3qkXo1en",
+	"Q3WHZUOKrcq0r0tcKHZofIlMmcqQUc2tU1yQmmsqM6+4QFa+qWvrWGkeQARaDH9uyC0gAoMVQQLlJoII",
+	"fFpQhW0oc2xKhgTInH68gQgq/PqGTM4FJM8jqLTZfJ1HUCMzObH958kYT79Nluerp6cn44vTP8LyCUTA",
+	"i1q8eXba5LBarSJw5GtrPAUgPhpsuLBOf6NMvlNrmAzLEuu61CkKLvEnL+Asgb5iVZcEyXgJnpEbP01t",
+	"RpC8jDbfFXkfkIVrc4elztTF+2t1S4tE/W4bVTWe1YxU7tAIhKjaQ7e0EKh8k6bkPSRzLD2tJl10njia",
+	"QwL/i3eVjdtfffyTc9a1+fXrebFOL+ShtJlbV63XXlXae21yZZ3SbbADEBNrq+L00jaG3SIAkmVabmL5",
+	"3tmaHGvaBBpB3dlaApm81L6YtsXu4AYXJrPO4X5pItDeTkfDFy+mw31aCh/lt9OhYswh6lq86vPk/BGe",
+	"bLjx5JB/g6zv6O/EHNj0udFOyDPuJhD1IZhsr9rZJ0pZ3F1RjY6rDduOBzfrXezj9KEgJR6VnQdRds4e",
+	"yPiTnQWLmqkKi70T6w10Dhd7+faMB1uH8mypKS2ol0VPPktoeQkJaMOj87aiumoqSJ69DAVtP4ZbB9ow",
+	"5eTEw33lHchjq6vtbzNrS0Kzl9TmZNSLcM/JfqbihdLGaV7ciH7aNGeEjpyoMCQdfhDvYXtXk4K5buUr",
+	"Ej1c17f2TpO6QsYZelInH95e/f+pdBcxozlQVfbWW3fkfHv5bDAaDAUFW5PBWkMCo8HZYARBG0WIM06t",
+	"meu8cdh6XEJOB/j1q3TxwCzpar07KiNGXXppY1LosHmdQQKX3WNX7Sm414jPz86O6L+7ZtgnU1qgyWl6",
+	"S4s+n3caxkweluh7DI9AV5i3RvsuZpjeZs7WU6+/0UNevozOzo5xIgWcNq7s3xYSJHEcIhhwlc0G1uUx",
+	"x3V8yGZpc/t4MM+eHxNLbT2Te9zSq/OjLDk71yX9E0EFJdH0YZz88UB51mX54/mtDin+/s7e+/vuF7H0",
+	"7Gz40Au+VUHcm0VCO2mqCuXthZ1oGHMvbaqnKZjI8b6E4zS83Gv2HhTza+Ig5VJ7lgdje0Od9N9b/1Q1",
+	"njLFhbNNXtiGlTSa7yj9chtA1Bs/x4eB2B2Jt+OpDEA/1Ca2xX5seNrMOPsl/5fK2UXm+IJuXuujailr",
+	"uaDQZJ0pwKsvJLVU1hxTwp/F5Q+WoDszd0cXuEjZOr8ZHZJxuwERXGJFFiK4qSnVWKrXDXnp3b9ZnRJM",
+	"VtE9Q1faUcoi2p2tdi+Ye8cFOZgIl46iQ2cw+88YsQb6QTJ0hosAZHesGIfUPLm7jbxCx9y2Saz1gAuq",
+	"ZHxYt8pRUNba23Lzn6zvdTVZ/RUAAP//Hk+J80UOAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
