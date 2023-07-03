@@ -49,7 +49,16 @@ type Error struct {
 }
 
 // Language defines model for Language.
-type Language = string
+type Language struct {
+	EnglishName string `json:"english_name"`
+
+	// Iso6391 ISO 3166-1 tag
+	Iso6391 string  `json:"iso_639_1"`
+	Name    *string `json:"name,omitempty"`
+}
+
+// LanguageParam defines model for LanguageParam.
+type LanguageParam = string
 
 // Unauthorized defines model for Unauthorized.
 type Unauthorized = Error
@@ -57,7 +66,7 @@ type Unauthorized = Error
 // ConfigurationCountriesParams defines parameters for ConfigurationCountries.
 type ConfigurationCountriesParams struct {
 	// Language Pass a ISO 639-1 value to display translated data for the fields that support it.
-	Language *Language `form:"language,omitempty" json:"language,omitempty"`
+	Language *LanguageParam `form:"language,omitempty" json:"language,omitempty"`
 }
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
@@ -141,6 +150,15 @@ type ClientInterface interface {
 
 	// ConfigurationJobs request
 	ConfigurationJobs(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ConfigurationLanguages request
+	ConfigurationLanguages(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ConfigurationPrimaryTranslations request
+	ConfigurationPrimaryTranslations(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ConfigurationTimezones request
+	ConfigurationTimezones(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) ConfigurationDetails(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -169,6 +187,42 @@ func (c *Client) ConfigurationCountries(ctx context.Context, params *Configurati
 
 func (c *Client) ConfigurationJobs(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewConfigurationJobsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ConfigurationLanguages(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewConfigurationLanguagesRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ConfigurationPrimaryTranslations(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewConfigurationPrimaryTranslationsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ConfigurationTimezones(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewConfigurationTimezonesRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -282,6 +336,87 @@ func NewConfigurationJobsRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewConfigurationLanguagesRequest generates requests for ConfigurationLanguages
+func NewConfigurationLanguagesRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/configuration/languages")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewConfigurationPrimaryTranslationsRequest generates requests for ConfigurationPrimaryTranslations
+func NewConfigurationPrimaryTranslationsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/configuration/primary_translations")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewConfigurationTimezonesRequest generates requests for ConfigurationTimezones
+func NewConfigurationTimezonesRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/configuration/timezones")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -333,6 +468,15 @@ type ClientWithResponsesInterface interface {
 
 	// ConfigurationJobs request
 	ConfigurationJobsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ConfigurationJobsResponse, error)
+
+	// ConfigurationLanguages request
+	ConfigurationLanguagesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ConfigurationLanguagesResponse, error)
+
+	// ConfigurationPrimaryTranslations request
+	ConfigurationPrimaryTranslationsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ConfigurationPrimaryTranslationsResponse, error)
+
+	// ConfigurationTimezones request
+	ConfigurationTimezonesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ConfigurationTimezonesResponse, error)
 }
 
 type ConfigurationDetailsResponse struct {
@@ -415,6 +559,79 @@ func (r ConfigurationJobsResponse) StatusCode() int {
 	return 0
 }
 
+type ConfigurationLanguagesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]Language
+	JSON401      *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r ConfigurationLanguagesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ConfigurationLanguagesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ConfigurationPrimaryTranslationsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]string
+	JSON401      *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r ConfigurationPrimaryTranslationsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ConfigurationPrimaryTranslationsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ConfigurationTimezonesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]struct {
+		// Iso31661 ISO 3166-1 tag
+		Iso31661 string   `json:"iso_3166_1"`
+		Zones    []string `json:"zones"`
+	}
+	JSON401 *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r ConfigurationTimezonesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ConfigurationTimezonesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 // ConfigurationDetailsWithResponse request returning *ConfigurationDetailsResponse
 func (c *ClientWithResponses) ConfigurationDetailsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ConfigurationDetailsResponse, error) {
 	rsp, err := c.ConfigurationDetails(ctx, reqEditors...)
@@ -440,6 +657,33 @@ func (c *ClientWithResponses) ConfigurationJobsWithResponse(ctx context.Context,
 		return nil, err
 	}
 	return ParseConfigurationJobsResponse(rsp)
+}
+
+// ConfigurationLanguagesWithResponse request returning *ConfigurationLanguagesResponse
+func (c *ClientWithResponses) ConfigurationLanguagesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ConfigurationLanguagesResponse, error) {
+	rsp, err := c.ConfigurationLanguages(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseConfigurationLanguagesResponse(rsp)
+}
+
+// ConfigurationPrimaryTranslationsWithResponse request returning *ConfigurationPrimaryTranslationsResponse
+func (c *ClientWithResponses) ConfigurationPrimaryTranslationsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ConfigurationPrimaryTranslationsResponse, error) {
+	rsp, err := c.ConfigurationPrimaryTranslations(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseConfigurationPrimaryTranslationsResponse(rsp)
+}
+
+// ConfigurationTimezonesWithResponse request returning *ConfigurationTimezonesResponse
+func (c *ClientWithResponses) ConfigurationTimezonesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ConfigurationTimezonesResponse, error) {
+	rsp, err := c.ConfigurationTimezones(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseConfigurationTimezonesResponse(rsp)
 }
 
 // ParseConfigurationDetailsResponse parses an HTTP response from a ConfigurationDetailsWithResponse call
@@ -552,6 +796,109 @@ func ParseConfigurationJobsResponse(rsp *http.Response) (*ConfigurationJobsRespo
 	return response, nil
 }
 
+// ParseConfigurationLanguagesResponse parses an HTTP response from a ConfigurationLanguagesWithResponse call
+func ParseConfigurationLanguagesResponse(rsp *http.Response) (*ConfigurationLanguagesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ConfigurationLanguagesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []Language
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseConfigurationPrimaryTranslationsResponse parses an HTTP response from a ConfigurationPrimaryTranslationsWithResponse call
+func ParseConfigurationPrimaryTranslationsResponse(rsp *http.Response) (*ConfigurationPrimaryTranslationsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ConfigurationPrimaryTranslationsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseConfigurationTimezonesResponse parses an HTTP response from a ConfigurationTimezonesWithResponse call
+func ParseConfigurationTimezonesResponse(rsp *http.Response) (*ConfigurationTimezonesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ConfigurationTimezonesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []struct {
+			// Iso31661 ISO 3166-1 tag
+			Iso31661 string   `json:"iso_3166_1"`
+			Zones    []string `json:"zones"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// Details
@@ -563,6 +910,15 @@ type ServerInterface interface {
 	// Jobs
 	// (GET /configuration/jobs)
 	ConfigurationJobs(ctx echo.Context) error
+	// Languages
+	// (GET /configuration/languages)
+	ConfigurationLanguages(ctx echo.Context) error
+	// Primary Translations
+	// (GET /configuration/primary_translations)
+	ConfigurationPrimaryTranslations(ctx echo.Context) error
+	// Timezones
+	// (GET /configuration/timezones)
+	ConfigurationTimezones(ctx echo.Context) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -612,6 +968,39 @@ func (w *ServerInterfaceWrapper) ConfigurationJobs(ctx echo.Context) error {
 	return err
 }
 
+// ConfigurationLanguages converts echo context to params.
+func (w *ServerInterfaceWrapper) ConfigurationLanguages(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.ConfigurationLanguages(ctx)
+	return err
+}
+
+// ConfigurationPrimaryTranslations converts echo context to params.
+func (w *ServerInterfaceWrapper) ConfigurationPrimaryTranslations(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.ConfigurationPrimaryTranslations(ctx)
+	return err
+}
+
+// ConfigurationTimezones converts echo context to params.
+func (w *ServerInterfaceWrapper) ConfigurationTimezones(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.ConfigurationTimezones(ctx)
+	return err
+}
+
 // This is a simple interface which specifies echo.Route addition functions which
 // are present on both echo.Echo and echo.Group, since we want to allow using
 // either of them for path registration
@@ -643,32 +1032,40 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/configuration", wrapper.ConfigurationDetails)
 	router.GET(baseURL+"/configuration/countries", wrapper.ConfigurationCountries)
 	router.GET(baseURL+"/configuration/jobs", wrapper.ConfigurationJobs)
+	router.GET(baseURL+"/configuration/languages", wrapper.ConfigurationLanguages)
+	router.GET(baseURL+"/configuration/primary_translations", wrapper.ConfigurationPrimaryTranslations)
+	router.GET(baseURL+"/configuration/timezones", wrapper.ConfigurationTimezones)
 
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"AAD//41XpHoyFgAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
