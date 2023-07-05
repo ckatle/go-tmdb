@@ -57,8 +57,44 @@ type Language struct {
 	Name    *string `json:"name,omitempty"`
 }
 
+// MovieBase defines model for MovieBase.
+type MovieBase struct {
+	Adult            *bool    `json:"adult,omitempty"`
+	BackdropPath     *string  `json:"backdrop_path,omitempty"`
+	GenreIds         *[]int32 `json:"genre_ids,omitempty"`
+	Id               int      `json:"id"`
+	OriginalLanguage string   `json:"original_language"`
+	OriginalTitle    string   `json:"original_title"`
+	Overview         *string  `json:"overview,omitempty"`
+	Popularity       *float32 `json:"popularity,omitempty"`
+	PosterPath       *string  `json:"poster_path,omitempty"`
+	ReleaseDate      *string  `json:"release_date,omitempty"`
+	Title            string   `json:"title"`
+	Video            *bool    `json:"video,omitempty"`
+	VoteAverage      *float32 `json:"vote_average,omitempty"`
+	VoteCount        *int     `json:"vote_count,omitempty"`
+}
+
+// Object defines model for Object.
+type Object struct {
+	Id   int32  `json:"id"`
+	Name string `json:"name"`
+}
+
+// IncludeAdult defines model for IncludeAdult.
+type IncludeAdult = bool
+
+// KeywordID defines model for KeywordID.
+type KeywordID = int32
+
 // LanguageParam defines model for LanguageParam.
 type LanguageParam = string
+
+// Page defines model for Page.
+type Page = int32
+
+// NotFound defines model for NotFound.
+type NotFound = Error
 
 // Unauthorized defines model for Unauthorized.
 type Unauthorized = Error
@@ -67,6 +103,27 @@ type Unauthorized = Error
 type ConfigurationCountriesParams struct {
 	// Language Pass a ISO 639-1 value to display translated data for the fields that support it.
 	Language *LanguageParam `form:"language,omitempty" json:"language,omitempty"`
+}
+
+// GenreMovieListParams defines parameters for GenreMovieList.
+type GenreMovieListParams struct {
+	// Language Pass a ISO 639-1 value to display translated data for the fields that support it.
+	Language *LanguageParam `form:"language,omitempty" json:"language,omitempty"`
+}
+
+// GenreTvListParams defines parameters for GenreTvList.
+type GenreTvListParams struct {
+	// Language Pass a ISO 639-1 value to display translated data for the fields that support it.
+	Language *LanguageParam `form:"language,omitempty" json:"language,omitempty"`
+}
+
+// KeywordMoviesParams defines parameters for KeywordMovies.
+type KeywordMoviesParams struct {
+	IncludeAdult *IncludeAdult `form:"include_adult,omitempty" json:"include_adult,omitempty"`
+
+	// Language Pass a ISO 639-1 value to display translated data for the fields that support it.
+	Language *LanguageParam `form:"language,omitempty" json:"language,omitempty"`
+	Page     *Page          `form:"page,omitempty" json:"page,omitempty"`
 }
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
@@ -159,6 +216,18 @@ type ClientInterface interface {
 
 	// ConfigurationTimezones request
 	ConfigurationTimezones(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GenreMovieList request
+	GenreMovieList(ctx context.Context, params *GenreMovieListParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GenreTvList request
+	GenreTvList(ctx context.Context, params *GenreTvListParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// KeywordDetails request
+	KeywordDetails(ctx context.Context, keywordId KeywordID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// KeywordMovies request
+	KeywordMovies(ctx context.Context, keywordId KeywordID, params *KeywordMoviesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) ConfigurationDetails(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -223,6 +292,54 @@ func (c *Client) ConfigurationPrimaryTranslations(ctx context.Context, reqEditor
 
 func (c *Client) ConfigurationTimezones(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewConfigurationTimezonesRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GenreMovieList(ctx context.Context, params *GenreMovieListParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGenreMovieListRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GenreTvList(ctx context.Context, params *GenreTvListParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGenreTvListRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) KeywordDetails(ctx context.Context, keywordId KeywordID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewKeywordDetailsRequest(c.Server, keywordId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) KeywordMovies(ctx context.Context, keywordId KeywordID, params *KeywordMoviesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewKeywordMoviesRequest(c.Server, keywordId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -417,6 +534,226 @@ func NewConfigurationTimezonesRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewGenreMovieListRequest generates requests for GenreMovieList
+func NewGenreMovieListRequest(server string, params *GenreMovieListParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/genre/movie/list")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Language != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "language", runtime.ParamLocationQuery, *params.Language); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGenreTvListRequest generates requests for GenreTvList
+func NewGenreTvListRequest(server string, params *GenreTvListParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/genre/tv/list")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Language != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "language", runtime.ParamLocationQuery, *params.Language); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewKeywordDetailsRequest generates requests for KeywordDetails
+func NewKeywordDetailsRequest(server string, keywordId KeywordID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "keyword_id", runtime.ParamLocationPath, keywordId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/keyword/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewKeywordMoviesRequest generates requests for KeywordMovies
+func NewKeywordMoviesRequest(server string, keywordId KeywordID, params *KeywordMoviesParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "keyword_id", runtime.ParamLocationPath, keywordId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/keyword/%s/movies", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.IncludeAdult != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_adult", runtime.ParamLocationQuery, *params.IncludeAdult); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Language != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "language", runtime.ParamLocationQuery, *params.Language); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Page != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "page", runtime.ParamLocationQuery, *params.Page); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -477,22 +814,34 @@ type ClientWithResponsesInterface interface {
 
 	// ConfigurationTimezones request
 	ConfigurationTimezonesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ConfigurationTimezonesResponse, error)
+
+	// GenreMovieList request
+	GenreMovieListWithResponse(ctx context.Context, params *GenreMovieListParams, reqEditors ...RequestEditorFn) (*GenreMovieListResponse, error)
+
+	// GenreTvList request
+	GenreTvListWithResponse(ctx context.Context, params *GenreTvListParams, reqEditors ...RequestEditorFn) (*GenreTvListResponse, error)
+
+	// KeywordDetails request
+	KeywordDetailsWithResponse(ctx context.Context, keywordId KeywordID, reqEditors ...RequestEditorFn) (*KeywordDetailsResponse, error)
+
+	// KeywordMovies request
+	KeywordMoviesWithResponse(ctx context.Context, keywordId KeywordID, params *KeywordMoviesParams, reqEditors ...RequestEditorFn) (*KeywordMoviesResponse, error)
 }
 
 type ConfigurationDetailsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *struct {
-		ChangeKeys *[]string `json:"change_keys,omitempty"`
-		Images     *struct {
-			BackdropSizes *[]string `json:"backdrop_sizes,omitempty"`
-			BaseUrl       *string   `json:"base_url,omitempty"`
-			LogoSizes     *[]string `json:"logo_sizes,omitempty"`
-			PosterSizes   *[]string `json:"poster_sizes,omitempty"`
-			ProfileSizes  *[]string `json:"profile_sizes,omitempty"`
-			SecureBaseUrl *string   `json:"secure_base_url,omitempty"`
-			StillSizes    *[]string `json:"still_sizes,omitempty"`
-		} `json:"images,omitempty"`
+		ChangeKeys []string `json:"change_keys"`
+		Images     struct {
+			BackdropSizes []string `json:"backdrop_sizes"`
+			BaseUrl       string   `json:"base_url"`
+			LogoSizes     []string `json:"logo_sizes"`
+			PosterSizes   []string `json:"poster_sizes"`
+			ProfileSizes  []string `json:"profile_sizes"`
+			SecureBaseUrl string   `json:"secure_base_url"`
+			StillSizes    []string `json:"still_sizes"`
+		} `json:"images"`
 	}
 	JSON401 *Error
 }
@@ -632,6 +981,106 @@ func (r ConfigurationTimezonesResponse) StatusCode() int {
 	return 0
 }
 
+type GenreMovieListResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]Object
+	JSON401      *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r GenreMovieListResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GenreMovieListResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GenreTvListResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]Object
+	JSON401      *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r GenreTvListResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GenreTvListResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type KeywordDetailsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Object
+	JSON401      *Error
+	JSON404      *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r KeywordDetailsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r KeywordDetailsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type KeywordMoviesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *struct {
+		Id           *int32       `json:"id,omitempty"`
+		Page         *int32       `json:"page,omitempty"`
+		Results      *[]MovieBase `json:"results,omitempty"`
+		TotalPages   *int32       `json:"total_pages,omitempty"`
+		TotalResults *int32       `json:"total_results,omitempty"`
+	}
+	JSON401 *Error
+	JSON404 *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r KeywordMoviesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r KeywordMoviesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 // ConfigurationDetailsWithResponse request returning *ConfigurationDetailsResponse
 func (c *ClientWithResponses) ConfigurationDetailsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ConfigurationDetailsResponse, error) {
 	rsp, err := c.ConfigurationDetails(ctx, reqEditors...)
@@ -686,6 +1135,42 @@ func (c *ClientWithResponses) ConfigurationTimezonesWithResponse(ctx context.Con
 	return ParseConfigurationTimezonesResponse(rsp)
 }
 
+// GenreMovieListWithResponse request returning *GenreMovieListResponse
+func (c *ClientWithResponses) GenreMovieListWithResponse(ctx context.Context, params *GenreMovieListParams, reqEditors ...RequestEditorFn) (*GenreMovieListResponse, error) {
+	rsp, err := c.GenreMovieList(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGenreMovieListResponse(rsp)
+}
+
+// GenreTvListWithResponse request returning *GenreTvListResponse
+func (c *ClientWithResponses) GenreTvListWithResponse(ctx context.Context, params *GenreTvListParams, reqEditors ...RequestEditorFn) (*GenreTvListResponse, error) {
+	rsp, err := c.GenreTvList(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGenreTvListResponse(rsp)
+}
+
+// KeywordDetailsWithResponse request returning *KeywordDetailsResponse
+func (c *ClientWithResponses) KeywordDetailsWithResponse(ctx context.Context, keywordId KeywordID, reqEditors ...RequestEditorFn) (*KeywordDetailsResponse, error) {
+	rsp, err := c.KeywordDetails(ctx, keywordId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseKeywordDetailsResponse(rsp)
+}
+
+// KeywordMoviesWithResponse request returning *KeywordMoviesResponse
+func (c *ClientWithResponses) KeywordMoviesWithResponse(ctx context.Context, keywordId KeywordID, params *KeywordMoviesParams, reqEditors ...RequestEditorFn) (*KeywordMoviesResponse, error) {
+	rsp, err := c.KeywordMovies(ctx, keywordId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseKeywordMoviesResponse(rsp)
+}
+
 // ParseConfigurationDetailsResponse parses an HTTP response from a ConfigurationDetailsWithResponse call
 func ParseConfigurationDetailsResponse(rsp *http.Response) (*ConfigurationDetailsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -702,16 +1187,16 @@ func ParseConfigurationDetailsResponse(rsp *http.Response) (*ConfigurationDetail
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest struct {
-			ChangeKeys *[]string `json:"change_keys,omitempty"`
-			Images     *struct {
-				BackdropSizes *[]string `json:"backdrop_sizes,omitempty"`
-				BaseUrl       *string   `json:"base_url,omitempty"`
-				LogoSizes     *[]string `json:"logo_sizes,omitempty"`
-				PosterSizes   *[]string `json:"poster_sizes,omitempty"`
-				ProfileSizes  *[]string `json:"profile_sizes,omitempty"`
-				SecureBaseUrl *string   `json:"secure_base_url,omitempty"`
-				StillSizes    *[]string `json:"still_sizes,omitempty"`
-			} `json:"images,omitempty"`
+			ChangeKeys []string `json:"change_keys"`
+			Images     struct {
+				BackdropSizes []string `json:"backdrop_sizes"`
+				BaseUrl       string   `json:"base_url"`
+				LogoSizes     []string `json:"logo_sizes"`
+				PosterSizes   []string `json:"poster_sizes"`
+				ProfileSizes  []string `json:"profile_sizes"`
+				SecureBaseUrl string   `json:"secure_base_url"`
+				StillSizes    []string `json:"still_sizes"`
+			} `json:"images"`
 		}
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -899,6 +1384,158 @@ func ParseConfigurationTimezonesResponse(rsp *http.Response) (*ConfigurationTime
 	return response, nil
 }
 
+// ParseGenreMovieListResponse parses an HTTP response from a GenreMovieListWithResponse call
+func ParseGenreMovieListResponse(rsp *http.Response) (*GenreMovieListResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GenreMovieListResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []Object
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGenreTvListResponse parses an HTTP response from a GenreTvListWithResponse call
+func ParseGenreTvListResponse(rsp *http.Response) (*GenreTvListResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GenreTvListResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []Object
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseKeywordDetailsResponse parses an HTTP response from a KeywordDetailsWithResponse call
+func ParseKeywordDetailsResponse(rsp *http.Response) (*KeywordDetailsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &KeywordDetailsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Object
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseKeywordMoviesResponse parses an HTTP response from a KeywordMoviesWithResponse call
+func ParseKeywordMoviesResponse(rsp *http.Response) (*KeywordMoviesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &KeywordMoviesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			Id           *int32       `json:"id,omitempty"`
+			Page         *int32       `json:"page,omitempty"`
+			Results      *[]MovieBase `json:"results,omitempty"`
+			TotalPages   *int32       `json:"total_pages,omitempty"`
+			TotalResults *int32       `json:"total_results,omitempty"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// Details
@@ -919,6 +1556,18 @@ type ServerInterface interface {
 	// Timezones
 	// (GET /configuration/timezones)
 	ConfigurationTimezones(ctx echo.Context) error
+	// Movie List
+	// (GET /genre/movie/list)
+	GenreMovieList(ctx echo.Context, params GenreMovieListParams) error
+	// TV List
+	// (GET /genre/tv/list)
+	GenreTvList(ctx echo.Context, params GenreTvListParams) error
+	// Details
+	// (GET /keyword/{keyword_id})
+	KeywordDetails(ctx echo.Context, keywordId KeywordID) error
+	// Movies
+	// (GET /keyword/{keyword_id}/movies)
+	KeywordMovies(ctx echo.Context, keywordId KeywordID, params KeywordMoviesParams) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -1001,6 +1650,105 @@ func (w *ServerInterfaceWrapper) ConfigurationTimezones(ctx echo.Context) error 
 	return err
 }
 
+// GenreMovieList converts echo context to params.
+func (w *ServerInterfaceWrapper) GenreMovieList(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GenreMovieListParams
+	// ------------- Optional query parameter "language" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "language", ctx.QueryParams(), &params.Language)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter language: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GenreMovieList(ctx, params)
+	return err
+}
+
+// GenreTvList converts echo context to params.
+func (w *ServerInterfaceWrapper) GenreTvList(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GenreTvListParams
+	// ------------- Optional query parameter "language" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "language", ctx.QueryParams(), &params.Language)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter language: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GenreTvList(ctx, params)
+	return err
+}
+
+// KeywordDetails converts echo context to params.
+func (w *ServerInterfaceWrapper) KeywordDetails(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "keyword_id" -------------
+	var keywordId KeywordID
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "keyword_id", runtime.ParamLocationPath, ctx.Param("keyword_id"), &keywordId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter keyword_id: %s", err))
+	}
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.KeywordDetails(ctx, keywordId)
+	return err
+}
+
+// KeywordMovies converts echo context to params.
+func (w *ServerInterfaceWrapper) KeywordMovies(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "keyword_id" -------------
+	var keywordId KeywordID
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "keyword_id", runtime.ParamLocationPath, ctx.Param("keyword_id"), &keywordId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter keyword_id: %s", err))
+	}
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params KeywordMoviesParams
+	// ------------- Optional query parameter "include_adult" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "include_adult", ctx.QueryParams(), &params.IncludeAdult)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter include_adult: %s", err))
+	}
+
+	// ------------- Optional query parameter "language" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "language", ctx.QueryParams(), &params.Language)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter language: %s", err))
+	}
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "page", ctx.QueryParams(), &params.Page)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter page: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.KeywordMovies(ctx, keywordId, params)
+	return err
+}
+
 // This is a simple interface which specifies echo.Route addition functions which
 // are present on both echo.Echo and echo.Group, since we want to allow using
 // either of them for path registration
@@ -1035,37 +1783,58 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/configuration/languages", wrapper.ConfigurationLanguages)
 	router.GET(baseURL+"/configuration/primary_translations", wrapper.ConfigurationPrimaryTranslations)
 	router.GET(baseURL+"/configuration/timezones", wrapper.ConfigurationTimezones)
+	router.GET(baseURL+"/genre/movie/list", wrapper.GenreMovieList)
+	router.GET(baseURL+"/genre/tv/list", wrapper.GenreTvList)
+	router.GET(baseURL+"/keyword/:keyword_id", wrapper.KeywordDetails)
+	router.GET(baseURL+"/keyword/:keyword_id/movies", wrapper.KeywordMovies)
 
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"AAD//41XpHoyFgAA",
+	"H4sIAAAAAAAC/8xaX1PbSBL/KlNz+5BUybZsA1n85gBH2JCDFIS7Dcd5x5q2NEGaUeaPiaH8te5p3/LF",
+	"rmb0x5ItQAkkt1V+sKXpnp7uX/+b9h0ORJIKDlwrPLrDKZEkAQ3S/TriQWwojKmJtf3NOB7hzwbkAnuY",
+	"kwTwCLNszYS4RR5WQQQJsaspzIgjnJFYgYf1IrUEUyFiIBwvlx5+C4sbIenRfrZeBZKlmgm7zXkE6Dp7",
+	"jY72u9jLdk+Jjlab5wsmjGIPS/hsmASKR1oaqEoyEzIh2gmrhwNcisK4hhCkE+WY8NCQEE6tBjbFOSVK",
+	"IYKOzk7QznC300dzEhtAWiDKVBqTBdKScBUTDRRRogmaCYl0BGjGIKYK6YhopEyaCqkR0+WB1tQZ52I0",
+	"axID73w4wx5OyJdj4KGO8Gjbwwnjxa+BZ1WkQVre/3lxSTq3V3eD5cvOi8tx56P7+stKAUpLxkN3/lO7",
+	"6T02Tu8VqO9tKjchX1hiEjza9n0nW/ar36D2pbWaSgVX4AD3D6H/Lgyn9nsguAbucEfSNGYBsabofVLW",
+	"HncYvpAkjQGPLu+w0kQbNQkEBTwabnnFgwSUcsdyaJKghJEBoIUwyIIFlDVWIExMERcaTQHN7O7WNsoE",
+	"ASiVg3d5VT39LxJmeIT/1lv5Ti97q3oHUor8ZJt4ViDnIFFAuNtvxjh1EFkJU8jYxUsPf+DE6EhIdgtP",
+	"0sirBoUc8TmJGUXj0yPrZiP0uzAoMcppIZSEW2kIyhZdw+KH6GScH8+dAzGeQcl9VyhhSjEeIiERy4Tt",
+	"OqDmXO2me8JwLRdOIZQyS0niUylSkJqBKiNPWnl0h4GHMVPRJAN3RW94zKmQkmz6h4eZEpNhf2dn0t+M",
+	"DTYo2HedPtIkxF6V437dWQcPOGvhoL807c+JZnP4FpmX1Yh4WT2AV1fBVUkqpp8g0Ha7fUiJ1EmBtvbK",
+	"pTXCTRewOyIxc7CvrG048ScxdRyZhsR92ViRPyBSksXGeWvMHa+mc2bQtImvdoqa+9w9EOK2Xj0c4TY9",
+	"r+EcpV/dNeXI6qGKlV5Nwo1Nmk5a5LcnOkujY+wMd1v5RVtHyJPWPY7QKEgD2jOpWoD9nZgzeE0UbAKB",
+	"FKXPY8WMh6ckuKZSpBNXojSpKgQuYcJoHdYlZ997vFBZB72HGV1nskkjJAsZJ/EkroBgQ7xylWY6vmfJ",
+	"HOScwU3jy1SkJiaS6UXlNTfJNBMiFUqDvF87EmIgCiaU6ObN7xdrziiImhqyCnDTSHOhYULmIOtKWEnp",
+	"FgQ2r1ReV+vEGsps2ZmJ1aTkDZU2ge8k+7aBvMyuLQDR0iFoUc5tCmFDEATGWu7MJtdMgCkQCdKmaBcR",
+	"3QurTPd4JUmkdZrldpu/m4O+czC0TzSZEgXoxfm7/dcvbelRqm+E7bP80Rykyoj9bt/v+g55KXCSMjzC",
+	"w67fHWIXMCInaC8QfMZCI0m25R0OoSH7vLc1rcs7tuap0SAKmrBY2SLH2sA9PKJ4hPeqy/azVXitaB34",
+	"fovqbFUq1e0cRISHMLmGRT0srDJ80Vk9kv88zBISZkzrW5SRSbFbuG+Xm6Hvt9nEWnBiZFyntigY9XpO",
+	"gq5O6LQrZNjTvbTXxDMWoXhYmK3tNrLkIeVBTruDVpykmLEYnkMo50owuV9Pqr2ilGZx/PTzrcWCUrRN",
+	"Yb11sNSMtabxdbXV5W2MM7WQlMHVq7lAA9VG23Dy1h5xy+/f13iU7tmrtVAu0JkkIbZlwCtv1iRUVqCa",
+	"s+Mru7weW3ouMcjcrRqjzCFoF2NiprStc0sK9KJeDqmXyCiw/Z8UJoyE0ciGwEdC0F4pgFe7q7lsVsRq",
+	"Sa9+v2GbtycFsRKKDzV+RX+2CcgfZNOqetpbteg0WhnUfrcEiHBa6WAUugFrUCR4Gzv+Zrd8ogmq/X61",
+	"7cLjQAupirZndJk9wB7eIwkI7OGzFAJGYnRoQNnMciFYAPhq6a0x2mcSAm1DyopX9syxO9ERSHxlsdQK",
+	"DpWm8qchIld0ezAU1Vt7RJQUmYtn14Pf7eHH5f7PCI96F4cPsp+41r1h4Ksbv2KFhcQ6sbLCcy3WyUWF",
+	"vFzTGhxlf/rToFHVdHt8pJJZ+klx3csEfxgqpBY6xGzGrO/Fi+Iy2CKkwqtlADnNxDivSvFsgMHAO4ev",
+	"XeucXTeD6Byc4KopH6s4fpDN8mOjtXO3N59mCdwK/g3uXVJ8jzefl9s9ozdX7yLxgbVPfqJLfGBs5d97",
+	"R6h0Hd94JllAentgNLE/dUy4ZkFvj3CrUBfya+yc2dfZHQtOnT6rCPiGS6Rvujx9jtvS0sLfeXlYuyzN",
+	"mDX17j8H81UMPQR0d73US2yv3bPgbY3wIiYhx0G5yZVj09AQH9olrp8/Zq52+L9WoTWvoHg0+LVMQePA",
+	"nbZ1/jn5yVbN7kRyJRZmddqtmVPPn27L8wukInFznzXP539FU/b9V9u7a9ZE/za+P9hBYzoHro2Ev655",
+	"zy8esm0+t+7drQbYy4qJ60bKh+SrfvXb7LSasX+njUrL5IZ55fdLu0QgBV62HQSePH9Lb4m2HicqB8uP",
+	"3QHk2lIPGCoLsfUCIpUQEL3678H6HShTKAEdCYqYQqvlnptFq8iNoG33+EePMhWIOchslz8Q40oDoZu+",
+	"m0v6LhPmCajwHl1c+x9Ii/VroeFxAvfngyeHkKYL9OpgpARyBuEWd+tpPiZo5vKk/z64s5pYq/Xgl4+c",
+	"8kJqbaqEe8O9Lx84PYw+BB+p7n8Mw090OnhzfXz8/l/dT6ktoCpjpsvBr1fZiGhny+9v7TSOgrLGb336",
+	"g8dcd94R7u45bIb5J1HpCL03hGuTEM5sPbmaB+F9otCZSUFGEFPgnX0j0FkgtEYWDchwit6IFNAF4Wh/",
+	"wQGBvDacgka3RpEkAY4Spt0ahQ5iW+ahN4Rfo9NF4qh/Ixz0ipwSlQljT8uCyENWtZKEDKR2rBTEWhHL",
+	"mIMBjt5KIDZpcMduCiGbaqRYECFiZggYR+MpcA0GpOfYKwbo659TkIgyQIcS+C1wREEp4ChinBilJbAp",
+	"cHTDJPXQTU40+/qnRMnX/4ax5R5CRGJtScgUeBfXJ2W7A9/v+v722oAM9/h4W+ibiy/jWfr6dOv0IgTz",
+	"+nr4+U1w/Htu6PrEDA/8wbDjDzr97XPfH7nPx8qApY0980Fajr36sGynu10fjw38V7ut8+9qxtpwZa6F",
+	"JvEkLW5dmr3tqe6WbVJxusZtBs37FJz9xv+O/bgb66eltzI3NGW3ytTPxZ3qvO/StXrZ35WydOImGeX4",
+	"gqSsqyNwKSofYQxd/M43uivqg3qfYjNB/iKrhioPStGWV8v/BQAA///CXy7jligAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
