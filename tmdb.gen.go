@@ -77,16 +77,24 @@ type MovieListItem struct {
 
 // MovieListPage defines model for MovieListPage.
 type MovieListPage struct {
-	Page         *int32           `json:"page,omitempty"`
-	Results      *[]MovieListItem `json:"results,omitempty"`
-	TotalPages   *int32           `json:"total_pages,omitempty"`
-	TotalResults *int32           `json:"total_results,omitempty"`
+	Page         int32           `json:"page"`
+	Results      []MovieListItem `json:"results"`
+	TotalPages   int32           `json:"total_pages"`
+	TotalResults int32           `json:"total_results"`
 }
 
 // Object defines model for Object.
 type Object struct {
 	Id   int32  `json:"id"`
 	Name string `json:"name"`
+}
+
+// ObjectListPage defines model for ObjectListPage.
+type ObjectListPage struct {
+	Page         int32    `json:"page"`
+	Results      []Object `json:"results"`
+	TotalPages   int32    `json:"total_pages"`
+	TotalResults int32    `json:"total_results"`
 }
 
 // IncludeAdult defines model for IncludeAdult.
@@ -138,6 +146,12 @@ type KeywordMoviesParams struct {
 	// Language `ISO-639-1`-`ISO-3166-1` code
 	Language *LanguageParam `form:"language,omitempty" json:"language,omitempty"`
 	Page     *Page          `form:"page,omitempty" json:"page,omitempty"`
+}
+
+// SearchKeywordParams defines parameters for SearchKeyword.
+type SearchKeywordParams struct {
+	Query Query `form:"query" json:"query"`
+	Page  *Page `form:"page,omitempty" json:"page,omitempty"`
 }
 
 // SearchMovieParams defines parameters for SearchMovie.
@@ -256,6 +270,9 @@ type ClientInterface interface {
 	// KeywordMovies request
 	KeywordMovies(ctx context.Context, keywordId KeywordID, params *KeywordMoviesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// SearchKeyword request
+	SearchKeyword(ctx context.Context, params *SearchKeywordParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// SearchMovie request
 	SearchMovie(ctx context.Context, params *SearchMovieParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
@@ -370,6 +387,18 @@ func (c *Client) KeywordDetails(ctx context.Context, keywordId KeywordID, reqEdi
 
 func (c *Client) KeywordMovies(ctx context.Context, keywordId KeywordID, params *KeywordMoviesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewKeywordMoviesRequest(c.Server, keywordId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SearchKeyword(ctx context.Context, params *SearchKeywordParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSearchKeywordRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -796,6 +825,67 @@ func NewKeywordMoviesRequest(server string, keywordId KeywordID, params *Keyword
 	return req, nil
 }
 
+// NewSearchKeywordRequest generates requests for SearchKeyword
+func NewSearchKeywordRequest(server string, params *SearchKeywordParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/search/keyword")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "query", runtime.ParamLocationQuery, params.Query); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		if params.Page != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "page", runtime.ParamLocationQuery, *params.Page); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewSearchMovieRequest generates requests for SearchMovie
 func NewSearchMovieRequest(server string, params *SearchMovieParams) (*http.Request, error) {
 	var err error
@@ -1009,6 +1099,9 @@ type ClientWithResponsesInterface interface {
 
 	// KeywordMovies request
 	KeywordMoviesWithResponse(ctx context.Context, keywordId KeywordID, params *KeywordMoviesParams, reqEditors ...RequestEditorFn) (*KeywordMoviesResponse, error)
+
+	// SearchKeyword request
+	SearchKeywordWithResponse(ctx context.Context, params *SearchKeywordParams, reqEditors ...RequestEditorFn) (*SearchKeywordResponse, error)
 
 	// SearchMovie request
 	SearchMovieWithResponse(ctx context.Context, params *SearchMovieParams, reqEditors ...RequestEditorFn) (*SearchMovieResponse, error)
@@ -1262,6 +1355,30 @@ func (r KeywordMoviesResponse) StatusCode() int {
 	return 0
 }
 
+type SearchKeywordResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ObjectListPage
+	JSON400      *Error
+	JSON401      *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r SearchKeywordResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SearchKeywordResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type SearchMovieResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -1374,6 +1491,15 @@ func (c *ClientWithResponses) KeywordMoviesWithResponse(ctx context.Context, key
 		return nil, err
 	}
 	return ParseKeywordMoviesResponse(rsp)
+}
+
+// SearchKeywordWithResponse request returning *SearchKeywordResponse
+func (c *ClientWithResponses) SearchKeywordWithResponse(ctx context.Context, params *SearchKeywordParams, reqEditors ...RequestEditorFn) (*SearchKeywordResponse, error) {
+	rsp, err := c.SearchKeyword(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSearchKeywordResponse(rsp)
 }
 
 // SearchMovieWithResponse request returning *SearchMovieResponse
@@ -1751,6 +1877,46 @@ func ParseKeywordMoviesResponse(rsp *http.Response) (*KeywordMoviesResponse, err
 	return response, nil
 }
 
+// ParseSearchKeywordResponse parses an HTTP response from a SearchKeywordWithResponse call
+func ParseSearchKeywordResponse(rsp *http.Response) (*SearchKeywordResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SearchKeywordResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ObjectListPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseSearchMovieResponse parses an HTTP response from a SearchMovieWithResponse call
 func ParseSearchMovieResponse(rsp *http.Response) (*SearchMovieResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -1823,6 +1989,9 @@ type ServerInterface interface {
 	// Movies
 	// (GET /keyword/{keyword_id}/movies)
 	KeywordMovies(ctx echo.Context, keywordId KeywordID, params KeywordMoviesParams) error
+	// Keyword
+	// (GET /search/keyword)
+	SearchKeyword(ctx echo.Context, params SearchKeywordParams) error
 	// Movie
 	// (GET /search/movie)
 	SearchMovie(ctx echo.Context, params SearchMovieParams) error
@@ -2007,6 +2176,33 @@ func (w *ServerInterfaceWrapper) KeywordMovies(ctx echo.Context) error {
 	return err
 }
 
+// SearchKeyword converts echo context to params.
+func (w *ServerInterfaceWrapper) SearchKeyword(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SearchKeywordParams
+	// ------------- Required query parameter "query" -------------
+
+	err = runtime.BindQueryParameter("form", true, true, "query", ctx.QueryParams(), &params.Query)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter query: %s", err))
+	}
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "page", ctx.QueryParams(), &params.Page)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter page: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.SearchKeyword(ctx, params)
+	return err
+}
+
 // SearchMovie converts echo context to params.
 func (w *ServerInterfaceWrapper) SearchMovie(ctx echo.Context) error {
 	var err error
@@ -2107,6 +2303,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/genre/tv/list", wrapper.GenreTvList)
 	router.GET(baseURL+"/keyword/:keyword_id", wrapper.KeywordDetails)
 	router.GET(baseURL+"/keyword/:keyword_id/movies", wrapper.KeywordMovies)
+	router.GET(baseURL+"/search/keyword", wrapper.SearchKeyword)
 	router.GET(baseURL+"/search/movie", wrapper.SearchMovie)
 
 }
@@ -2114,56 +2311,58 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"LyBbNAAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
