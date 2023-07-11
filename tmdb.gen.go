@@ -35,6 +35,13 @@ type Country struct {
 	NativeName *string `json:"native_name,omitempty"`
 }
 
+// CountryWithTimezones defines model for CountryWithTimezones.
+type CountryWithTimezones struct {
+	// Iso31661 ISO 3166-1 tag
+	Iso31661 string   `json:"iso_3166_1"`
+	Zones    []string `json:"zones"`
+}
+
 // Department defines model for Department.
 type Department struct {
 	// Department The name of the department
@@ -110,6 +117,32 @@ type ObjectListPage struct {
 	TotalResults int32    `json:"total_results"`
 }
 
+// TvListItem defines model for TvListItem.
+type TvListItem struct {
+	Adult            *bool     `json:"adult,omitempty"`
+	BackdropPath     *string   `json:"backdrop_path,omitempty"`
+	FirstAirDate     *string   `json:"first_air_date,omitempty"`
+	GenreIds         *[]int32  `json:"genre_ids,omitempty"`
+	Id               int       `json:"id"`
+	Name             string    `json:"name"`
+	OriginCountry    *[]string `json:"origin_country,omitempty"`
+	OriginalLanguage string    `json:"original_language"`
+	OriginalName     string    `json:"original_name"`
+	Overview         *string   `json:"overview,omitempty"`
+	Popularity       *float32  `json:"popularity,omitempty"`
+	PosterPath       *string   `json:"poster_path,omitempty"`
+	VoteAverage      *float32  `json:"vote_average,omitempty"`
+	VoteCount        *int      `json:"vote_count,omitempty"`
+}
+
+// TvListPage defines model for TvListPage.
+type TvListPage struct {
+	Page         int32        `json:"page"`
+	Results      []TvListItem `json:"results"`
+	TotalPages   int32        `json:"total_pages"`
+	TotalResults int32        `json:"total_results"`
+}
+
 // IncludeAdult defines model for IncludeAdult.
 type IncludeAdult = bool
 
@@ -130,6 +163,9 @@ type Query = string
 
 // Region defines model for Region.
 type Region = string
+
+// Year defines model for Year.
+type Year = string
 
 // InvalidPage defines model for InvalidPage.
 type InvalidPage = Error
@@ -177,6 +213,26 @@ type MovieNowPlayingListParams struct {
 	Region *Region `form:"region,omitempty" json:"region,omitempty"`
 }
 
+// MoviePopularListParams defines parameters for MoviePopularList.
+type MoviePopularListParams struct {
+	// Language `ISO-639-1`-`ISO-3166-1` code
+	Language *LanguageParam `form:"language,omitempty" json:"language,omitempty"`
+	Page     *Page          `form:"page,omitempty" json:"page,omitempty"`
+
+	// Region `ISO-3166-1` code
+	Region *Region `form:"region,omitempty" json:"region,omitempty"`
+}
+
+// MovieTopRatedListParams defines parameters for MovieTopRatedList.
+type MovieTopRatedListParams struct {
+	// Language `ISO-639-1`-`ISO-3166-1` code
+	Language *LanguageParam `form:"language,omitempty" json:"language,omitempty"`
+	Page     *Page          `form:"page,omitempty" json:"page,omitempty"`
+
+	// Region `ISO-3166-1` code
+	Region *Region `form:"region,omitempty" json:"region,omitempty"`
+}
+
 // MovieUpcomingListParams defines parameters for MovieUpcomingList.
 type MovieUpcomingListParams struct {
 	// Language `ISO-639-1`-`ISO-3166-1` code
@@ -212,7 +268,19 @@ type SearchMovieParams struct {
 
 	// Region `ISO-3166-1` code
 	Region *Region `form:"region,omitempty" json:"region,omitempty"`
-	Year   *string `form:"year,omitempty" json:"year,omitempty"`
+	Year   *Year   `form:"year,omitempty" json:"year,omitempty"`
+}
+
+// SearchTVParams defines parameters for SearchTV.
+type SearchTVParams struct {
+	Query            Query         `form:"query" json:"query"`
+	FirstAirDateYear *string       `form:"first_air_date_year,omitempty" json:"first_air_date_year,omitempty"`
+	IncludeAdult     *IncludeAdult `form:"include_adult,omitempty" json:"include_adult,omitempty"`
+
+	// Language `ISO-639-1`-`ISO-3166-1` code
+	Language *LanguageParam `form:"language,omitempty" json:"language,omitempty"`
+	Page     *Page          `form:"page,omitempty" json:"page,omitempty"`
+	Year     *Year          `form:"year,omitempty" json:"year,omitempty"`
 }
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
@@ -321,6 +389,12 @@ type ClientInterface interface {
 	// MovieNowPlayingList request
 	MovieNowPlayingList(ctx context.Context, params *MovieNowPlayingListParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// MoviePopularList request
+	MoviePopularList(ctx context.Context, params *MoviePopularListParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// MovieTopRatedList request
+	MovieTopRatedList(ctx context.Context, params *MovieTopRatedListParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// MovieUpcomingList request
 	MovieUpcomingList(ctx context.Context, params *MovieUpcomingListParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -335,6 +409,9 @@ type ClientInterface interface {
 
 	// SearchMovie request
 	SearchMovie(ctx context.Context, params *SearchMovieParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SearchTV request
+	SearchTV(ctx context.Context, params *SearchTVParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) ConfigurationDetails(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -469,6 +546,30 @@ func (c *Client) MovieNowPlayingList(ctx context.Context, params *MovieNowPlayin
 	return c.Client.Do(req)
 }
 
+func (c *Client) MoviePopularList(ctx context.Context, params *MoviePopularListParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewMoviePopularListRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) MovieTopRatedList(ctx context.Context, params *MovieTopRatedListParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewMovieTopRatedListRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) MovieUpcomingList(ctx context.Context, params *MovieUpcomingListParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewMovieUpcomingListRequest(c.Server, params)
 	if err != nil {
@@ -519,6 +620,18 @@ func (c *Client) SearchKeyword(ctx context.Context, params *SearchKeywordParams,
 
 func (c *Client) SearchMovie(ctx context.Context, params *SearchMovieParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSearchMovieRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SearchTV(ctx context.Context, params *SearchTVParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSearchTVRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -1014,6 +1127,168 @@ func NewMovieNowPlayingListRequest(server string, params *MovieNowPlayingListPar
 	return req, nil
 }
 
+// NewMoviePopularListRequest generates requests for MoviePopularList
+func NewMoviePopularListRequest(server string, params *MoviePopularListParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/movie/popular")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Language != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "language", runtime.ParamLocationQuery, *params.Language); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Page != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "page", runtime.ParamLocationQuery, *params.Page); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Region != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "region", runtime.ParamLocationQuery, *params.Region); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewMovieTopRatedListRequest generates requests for MovieTopRatedList
+func NewMovieTopRatedListRequest(server string, params *MovieTopRatedListParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/movie/top_rated")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Language != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "language", runtime.ParamLocationQuery, *params.Language); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Page != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "page", runtime.ParamLocationQuery, *params.Page); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Region != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "region", runtime.ParamLocationQuery, *params.Region); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewMovieUpcomingListRequest generates requests for MovieUpcomingList
 func NewMovieUpcomingListRequest(server string, params *MovieUpcomingListParams) (*http.Request, error) {
 	var err error
@@ -1403,6 +1678,131 @@ func NewSearchMovieRequest(server string, params *SearchMovieParams) (*http.Requ
 	return req, nil
 }
 
+// NewSearchTVRequest generates requests for SearchTV
+func NewSearchTVRequest(server string, params *SearchTVParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/search/tv")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "query", runtime.ParamLocationQuery, params.Query); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		if params.FirstAirDateYear != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "first_air_date_year", runtime.ParamLocationQuery, *params.FirstAirDateYear); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeAdult != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_adult", runtime.ParamLocationQuery, *params.IncludeAdult); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Language != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "language", runtime.ParamLocationQuery, *params.Language); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Page != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "page", runtime.ParamLocationQuery, *params.Page); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Year != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "year", runtime.ParamLocationQuery, *params.Year); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -1479,6 +1879,12 @@ type ClientWithResponsesInterface interface {
 	// MovieNowPlayingList request
 	MovieNowPlayingListWithResponse(ctx context.Context, params *MovieNowPlayingListParams, reqEditors ...RequestEditorFn) (*MovieNowPlayingListResponse, error)
 
+	// MoviePopularList request
+	MoviePopularListWithResponse(ctx context.Context, params *MoviePopularListParams, reqEditors ...RequestEditorFn) (*MoviePopularListResponse, error)
+
+	// MovieTopRatedList request
+	MovieTopRatedListWithResponse(ctx context.Context, params *MovieTopRatedListParams, reqEditors ...RequestEditorFn) (*MovieTopRatedListResponse, error)
+
 	// MovieUpcomingList request
 	MovieUpcomingListWithResponse(ctx context.Context, params *MovieUpcomingListParams, reqEditors ...RequestEditorFn) (*MovieUpcomingListResponse, error)
 
@@ -1493,6 +1899,9 @@ type ClientWithResponsesInterface interface {
 
 	// SearchMovie request
 	SearchMovieWithResponse(ctx context.Context, params *SearchMovieParams, reqEditors ...RequestEditorFn) (*SearchMovieResponse, error)
+
+	// SearchTV request
+	SearchTVWithResponse(ctx context.Context, params *SearchTVParams, reqEditors ...RequestEditorFn) (*SearchTVResponse, error)
 }
 
 type ConfigurationDetailsResponse struct {
@@ -1624,12 +2033,8 @@ func (r ConfigurationPrimaryTranslationsResponse) StatusCode() int {
 type ConfigurationTimezonesResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *[]struct {
-		// Iso31661 ISO 3166-1 tag
-		Iso31661 string   `json:"iso_3166_1"`
-		Zones    []string `json:"zones"`
-	}
-	JSON401 *Error
+	JSON200      *[]CountryWithTimezones
+	JSON401      *Error
 }
 
 // Status returns HTTPResponse.Status
@@ -1767,6 +2172,54 @@ func (r MovieNowPlayingListResponse) StatusCode() int {
 	return 0
 }
 
+type MoviePopularListResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *MovieListPage
+	JSON400      *Error
+	JSON401      *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r MoviePopularListResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r MoviePopularListResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type MovieTopRatedListResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *MovieListPage
+	JSON400      *Error
+	JSON401      *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r MovieTopRatedListResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r MovieTopRatedListResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type MovieUpcomingListResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -1891,6 +2344,30 @@ func (r SearchMovieResponse) StatusCode() int {
 	return 0
 }
 
+type SearchTVResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *TvListPage
+	JSON400      *Error
+	JSON401      *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r SearchTVResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SearchTVResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 // ConfigurationDetailsWithResponse request returning *ConfigurationDetailsResponse
 func (c *ClientWithResponses) ConfigurationDetailsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ConfigurationDetailsResponse, error) {
 	rsp, err := c.ConfigurationDetails(ctx, reqEditors...)
@@ -1990,6 +2467,24 @@ func (c *ClientWithResponses) MovieNowPlayingListWithResponse(ctx context.Contex
 	return ParseMovieNowPlayingListResponse(rsp)
 }
 
+// MoviePopularListWithResponse request returning *MoviePopularListResponse
+func (c *ClientWithResponses) MoviePopularListWithResponse(ctx context.Context, params *MoviePopularListParams, reqEditors ...RequestEditorFn) (*MoviePopularListResponse, error) {
+	rsp, err := c.MoviePopularList(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseMoviePopularListResponse(rsp)
+}
+
+// MovieTopRatedListWithResponse request returning *MovieTopRatedListResponse
+func (c *ClientWithResponses) MovieTopRatedListWithResponse(ctx context.Context, params *MovieTopRatedListParams, reqEditors ...RequestEditorFn) (*MovieTopRatedListResponse, error) {
+	rsp, err := c.MovieTopRatedList(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseMovieTopRatedListResponse(rsp)
+}
+
 // MovieUpcomingListWithResponse request returning *MovieUpcomingListResponse
 func (c *ClientWithResponses) MovieUpcomingListWithResponse(ctx context.Context, params *MovieUpcomingListParams, reqEditors ...RequestEditorFn) (*MovieUpcomingListResponse, error) {
 	rsp, err := c.MovieUpcomingList(ctx, params, reqEditors...)
@@ -2033,6 +2528,15 @@ func (c *ClientWithResponses) SearchMovieWithResponse(ctx context.Context, param
 		return nil, err
 	}
 	return ParseSearchMovieResponse(rsp)
+}
+
+// SearchTVWithResponse request returning *SearchTVResponse
+func (c *ClientWithResponses) SearchTVWithResponse(ctx context.Context, params *SearchTVParams, reqEditors ...RequestEditorFn) (*SearchTVResponse, error) {
+	rsp, err := c.SearchTV(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSearchTVResponse(rsp)
 }
 
 // ParseConfigurationDetailsResponse parses an HTTP response from a ConfigurationDetailsWithResponse call
@@ -2226,11 +2730,7 @@ func ParseConfigurationTimezonesResponse(rsp *http.Response) (*ConfigurationTime
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest []struct {
-			// Iso31661 ISO 3166-1 tag
-			Iso31661 string   `json:"iso_3166_1"`
-			Zones    []string `json:"zones"`
-		}
+		var dest []CountryWithTimezones
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -2417,6 +2917,86 @@ func ParseMovieNowPlayingListResponse(rsp *http.Response) (*MovieNowPlayingListR
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest MovieListPageWithDates
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseMoviePopularListResponse parses an HTTP response from a MoviePopularListWithResponse call
+func ParseMoviePopularListResponse(rsp *http.Response) (*MoviePopularListResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &MoviePopularListResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest MovieListPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseMovieTopRatedListResponse parses an HTTP response from a MovieTopRatedListWithResponse call
+func ParseMovieTopRatedListResponse(rsp *http.Response) (*MovieTopRatedListResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &MovieTopRatedListResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest MovieListPage
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -2651,6 +3231,46 @@ func ParseSearchMovieResponse(rsp *http.Response) (*SearchMovieResponse, error) 
 	return response, nil
 }
 
+// ParseSearchTVResponse parses an HTTP response from a SearchTVWithResponse call
+func ParseSearchTVResponse(rsp *http.Response) (*SearchTVResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SearchTVResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest TvListPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// Details
@@ -2686,6 +3306,12 @@ type ServerInterface interface {
 	// Now Playing
 	// (GET /movie/now_playing)
 	MovieNowPlayingList(ctx echo.Context, params MovieNowPlayingListParams) error
+	// Popular
+	// (GET /movie/popular)
+	MoviePopularList(ctx echo.Context, params MoviePopularListParams) error
+	// Top Rated
+	// (GET /movie/top_rated)
+	MovieTopRatedList(ctx echo.Context, params MovieTopRatedListParams) error
 	// Upcoming
 	// (GET /movie/upcoming)
 	MovieUpcomingList(ctx echo.Context, params MovieUpcomingListParams) error
@@ -2701,6 +3327,9 @@ type ServerInterface interface {
 	// Movie
 	// (GET /search/movie)
 	SearchMovie(ctx echo.Context, params SearchMovieParams) error
+	// TV
+	// (GET /search/tv)
+	SearchTV(ctx echo.Context, params SearchTVParams) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -2916,6 +3545,74 @@ func (w *ServerInterfaceWrapper) MovieNowPlayingList(ctx echo.Context) error {
 	return err
 }
 
+// MoviePopularList converts echo context to params.
+func (w *ServerInterfaceWrapper) MoviePopularList(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params MoviePopularListParams
+	// ------------- Optional query parameter "language" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "language", ctx.QueryParams(), &params.Language)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter language: %s", err))
+	}
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "page", ctx.QueryParams(), &params.Page)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter page: %s", err))
+	}
+
+	// ------------- Optional query parameter "region" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "region", ctx.QueryParams(), &params.Region)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter region: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.MoviePopularList(ctx, params)
+	return err
+}
+
+// MovieTopRatedList converts echo context to params.
+func (w *ServerInterfaceWrapper) MovieTopRatedList(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params MovieTopRatedListParams
+	// ------------- Optional query parameter "language" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "language", ctx.QueryParams(), &params.Language)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter language: %s", err))
+	}
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "page", ctx.QueryParams(), &params.Page)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter page: %s", err))
+	}
+
+	// ------------- Optional query parameter "region" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "region", ctx.QueryParams(), &params.Region)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter region: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.MovieTopRatedList(ctx, params)
+	return err
+}
+
 // MovieUpcomingList converts echo context to params.
 func (w *ServerInterfaceWrapper) MovieUpcomingList(ctx echo.Context) error {
 	var err error
@@ -3091,6 +3788,61 @@ func (w *ServerInterfaceWrapper) SearchMovie(ctx echo.Context) error {
 	return err
 }
 
+// SearchTV converts echo context to params.
+func (w *ServerInterfaceWrapper) SearchTV(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SearchTVParams
+	// ------------- Required query parameter "query" -------------
+
+	err = runtime.BindQueryParameter("form", true, true, "query", ctx.QueryParams(), &params.Query)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter query: %s", err))
+	}
+
+	// ------------- Optional query parameter "first_air_date_year" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "first_air_date_year", ctx.QueryParams(), &params.FirstAirDateYear)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter first_air_date_year: %s", err))
+	}
+
+	// ------------- Optional query parameter "include_adult" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "include_adult", ctx.QueryParams(), &params.IncludeAdult)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter include_adult: %s", err))
+	}
+
+	// ------------- Optional query parameter "language" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "language", ctx.QueryParams(), &params.Language)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter language: %s", err))
+	}
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "page", ctx.QueryParams(), &params.Page)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter page: %s", err))
+	}
+
+	// ------------- Optional query parameter "year" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "year", ctx.QueryParams(), &params.Year)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter year: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.SearchTV(ctx, params)
+	return err
+}
+
 // This is a simple interface which specifies echo.Route addition functions which
 // are present on both echo.Echo and echo.Group, since we want to allow using
 // either of them for path registration
@@ -3130,90 +3882,111 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/keyword/:keyword_id", wrapper.KeywordDetails)
 	router.GET(baseURL+"/keyword/:keyword_id/movies", wrapper.KeywordMovies)
 	router.GET(baseURL+"/movie/now_playing", wrapper.MovieNowPlayingList)
+	router.GET(baseURL+"/movie/popular", wrapper.MoviePopularList)
+	router.GET(baseURL+"/movie/top_rated", wrapper.MovieTopRatedList)
 	router.GET(baseURL+"/movie/upcoming", wrapper.MovieUpcomingList)
 	router.GET(baseURL+"/movie/:movie_id/keywords", wrapper.MovieKeywords)
 	router.GET(baseURL+"/movie/:movie_id/similar", wrapper.MovieSimilar)
 	router.GET(baseURL+"/search/keyword", wrapper.SearchKeyword)
 	router.GET(baseURL+"/search/movie", wrapper.SearchMovie)
+	router.GET(baseURL+"/search/tv", wrapper.SearchTV)
 
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
