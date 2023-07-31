@@ -34,13 +34,13 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
-	github.com/pelletier/go-toml/v2 v2.0.8 // indirect
+	github.com/pelletier/go-toml/v2 v2.0.9 // indirect
 	github.com/perimeterx/marshmallow v1.1.5 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.11 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
-	golang.org/x/arch v0.3.0 // indirect
+	golang.org/x/arch v0.4.0 // indirect
 	golang.org/x/crypto v0.11.0 // indirect
 	golang.org/x/net v0.12.0 // indirect
 	golang.org/x/sys v0.10.0 // indirect
