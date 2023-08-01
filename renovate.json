@@ -4,21 +4,36 @@
     "develop"
   ],
   "extends": [
-    "config:base"
+    "config:recommended"
   ],
-  "prHourlyLimit": 1,
-  "timezone": "Europe/Berlin",
-  "schedule": [
-    "after 7am every weekday",
-    "before 1pm every weekday"
+  "assignees": [
+    "ckatle"
   ],
   "packageRules": [
     {
-      "automerge": true,
+      "description": "Automatically merge minor and patch-level updates",
       "matchUpdateTypes": [
         "minor",
-        "patch"
-      ]
+        "patch",
+        "digest"
+      ],
+      "automerge": true,
+      "automergeType": "branch"
     }
-  ]
+  ],
+  "postUpdateOptions": [
+    "gomodTidy"
+  ],
+  "prConcurrentLimit": 1,
+  "prHourlyLimit": 1,
+  "timezone": "Europe/Berlin",
+  "schedule": [
+    "after 10pm every weekday",
+    "before 5am every weekday",
+    "every weekend"
+  ],
+  "rebaseWhen": "behind-base-branch",
+  "rollbackPrs": true,
+  "dependencyDashboard": true,
+  "dependencyDashboardAutoclose": true
 }
