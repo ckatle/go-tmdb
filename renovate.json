@@ -5,5 +5,20 @@
   ],
   "extends": [
     "config:base"
+  ],
+  "prHourlyLimit": 1,
+  "timezone": "Europe/Berlin",
+  "schedule": [
+    "after 7am every weekday",
+    "before 1pm every weekday"
+  ],
+  "packageRules": [
+    {
+      "automerge": true,
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ]
+    }
   ]
 }
