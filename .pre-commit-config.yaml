@@ -1,4 +1,18 @@
 repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: check-json
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: 0.23.3
+    hooks:
+      - id: check-jsonschema
+        files: ^renovate\.json$
+        args: [ "--check-metaschema" ]
+#  - repo: https://gitlab.com/bmares/check-json5
+#    rev: v1.0.0
+#    hooks:
+#      - id: check-json5
   - repo: https://github.com/golangci/golangci-lint
     rev: v1.53.3
     hooks:
