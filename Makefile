@@ -1,9 +1,14 @@
-.PHONY: dep
+.PHONY: *
+
+clean:
+	@go clean -cache
+	@go clean -modcache
+
 dep: ## download and install dependencies
+	@echo "download dependencies"
 	@go get -u ./...
 	@go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest
 
-.PHONY: generate
 generate: dep ## generate client code from openapi.yml
 	@rm tmdb.gen.go
 	@oapi-codegen -package tmdb api/openapi.yml > tmdb.gen.go

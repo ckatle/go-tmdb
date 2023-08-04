@@ -33,7 +33,5 @@
     "every weekend"
   ],
   "rebaseWhen": "behind-base-branch",
-  "rollbackPrs": true,
-  "dependencyDashboard": true,
-  "dependencyDashboardAutoclose": true
+  "rollbackPrs": true
 }
