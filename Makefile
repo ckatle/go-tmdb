@@ -10,8 +10,8 @@ dep: ## download and install dependencies
 	@go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest
 
 generate: dep ## generate client code from openapi.yml
-	@rm tmdb.gen.go
-	@oapi-codegen -package tmdb api/openapi.yml > tmdb.gen.go
+	@rm client.gen.go
+	@oapi-codegen -package tmdb api/openapi.yml > client.gen.go
 	@go mod tidy
 
 pc: pca pcr
