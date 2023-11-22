@@ -4,14 +4,12 @@ clean:
 	@go clean -cache
 	@go clean -modcache
 
-dep: ## download and install dependencies
-	@echo "download dependencies"
-	@go get -u ./...
-	@go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest
-
-generate: dep ## generate client code from openapi.yml
-	@rm client.gen.go
-	@oapi-codegen -package tmdb api/openapi.yml > client.gen.go
+generate: ## generate client code from openapi.yml
+	@go install github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen@latest
+	@rm ./pkg/tmdb/*
+	@oapi-codegen --config=./configs/api/models.yml ./api/openapi.yml
+	@oapi-codegen --config=./configs/api/client.yml ./api/openapi.yml
+	#@oapi-codegen -package tmdb api/openapi.yml > ./pkg/tmdb/client.gen.go
 	@go mod tidy
 
 pc: pca pcr

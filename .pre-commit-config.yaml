@@ -4,16 +4,12 @@ repos:
     hooks:
       - id: check-json
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.27.0
+    rev: 0.27.1
     hooks:
       - id: check-jsonschema
         files: ^renovate\.json$
         args: [ "--check-metaschema" ]
-#  - repo: https://gitlab.com/bmares/check-json5
-#    rev: v1.0.0
-#    hooks:
-#      - id: check-json5
   - repo: https://github.com/golangci/golangci-lint
-    rev: v1.54.2
+    rev: v1.55.2
     hooks:
       - id: golangci-lint
