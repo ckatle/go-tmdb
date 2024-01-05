@@ -1968,6 +1968,7 @@ type CompanyDetailsResponse struct {
 	JSON200      *Company
 	JSON401      *Unauthorized
 	JSON404      *NotFound
+	JSON429      *TooManyRequests
 }
 
 // Status returns HTTPResponse.Status
@@ -1995,6 +1996,7 @@ type CompanyImagesResponse struct {
 	}
 	JSON401 *Unauthorized
 	JSON404 *NotFound
+	JSON429 *TooManyRequests
 }
 
 // Status returns HTTPResponse.Status
@@ -2029,6 +2031,7 @@ type ConfigurationDetailsResponse struct {
 		} `json:"images"`
 	}
 	JSON401 *Unauthorized
+	JSON429 *TooManyRequests
 }
 
 // Status returns HTTPResponse.Status
@@ -2052,6 +2055,7 @@ type ConfigurationCountriesResponse struct {
 	HTTPResponse *http.Response
 	JSON200      *[]Country
 	JSON401      *Unauthorized
+	JSON429      *TooManyRequests
 }
 
 // Status returns HTTPResponse.Status
@@ -2075,6 +2079,7 @@ type ConfigurationJobsResponse struct {
 	HTTPResponse *http.Response
 	JSON200      *[]Department
 	JSON401      *Unauthorized
+	JSON429      *TooManyRequests
 }
 
 // Status returns HTTPResponse.Status
@@ -2098,6 +2103,7 @@ type ConfigurationLanguagesResponse struct {
 	HTTPResponse *http.Response
 	JSON200      *[]Language
 	JSON401      *Unauthorized
+	JSON429      *TooManyRequests
 }
 
 // Status returns HTTPResponse.Status
@@ -2121,6 +2127,7 @@ type ConfigurationPrimaryTranslationsResponse struct {
 	HTTPResponse *http.Response
 	JSON200      *[]string
 	JSON401      *Unauthorized
+	JSON429      *TooManyRequests
 }
 
 // Status returns HTTPResponse.Status
@@ -2144,6 +2151,7 @@ type ConfigurationTimezonesResponse struct {
 	HTTPResponse *http.Response
 	JSON200      *[]CountryWithTimezones
 	JSON401      *Unauthorized
+	JSON429      *TooManyRequests
 }
 
 // Status returns HTTPResponse.Status
@@ -2167,6 +2175,7 @@ type GenreMovieListResponse struct {
 	HTTPResponse *http.Response
 	JSON200      *[]Object
 	JSON401      *Unauthorized
+	JSON429      *TooManyRequests
 }
 
 // Status returns HTTPResponse.Status
@@ -2190,6 +2199,7 @@ type GenreTvListResponse struct {
 	HTTPResponse *http.Response
 	JSON200      *[]Object
 	JSON401      *Unauthorized
+	JSON429      *TooManyRequests
 }
 
 // Status returns HTTPResponse.Status
@@ -2214,6 +2224,7 @@ type KeywordDetailsResponse struct {
 	JSON200      *Object
 	JSON401      *Unauthorized
 	JSON404      *NotFound
+	JSON429      *TooManyRequests
 }
 
 // Status returns HTTPResponse.Status
@@ -2239,6 +2250,7 @@ type KeywordMoviesResponse struct {
 	JSON400      *InvalidPage
 	JSON401      *Unauthorized
 	JSON404      *NotFound
+	JSON429      *TooManyRequests
 }
 
 // Status returns HTTPResponse.Status
@@ -2263,6 +2275,7 @@ type MovieNowPlayingListResponse struct {
 	JSON200      *MovieListPageWithDates
 	JSON400      *InvalidPage
 	JSON401      *Unauthorized
+	JSON429      *TooManyRequests
 }
 
 // Status returns HTTPResponse.Status
@@ -2287,6 +2300,7 @@ type MoviePopularListResponse struct {
 	JSON200      *MovieListPage
 	JSON400      *InvalidPage
 	JSON401      *Unauthorized
+	JSON429      *TooManyRequests
 }
 
 // Status returns HTTPResponse.Status
@@ -2311,6 +2325,7 @@ type MovieTopRatedListResponse struct {
 	JSON200      *MovieListPage
 	JSON400      *InvalidPage
 	JSON401      *Unauthorized
+	JSON429      *TooManyRequests
 }
 
 // Status returns HTTPResponse.Status
@@ -2335,6 +2350,7 @@ type MovieUpcomingListResponse struct {
 	JSON200      *MovieListPageWithDates
 	JSON400      *InvalidPage
 	JSON401      *Unauthorized
+	JSON429      *TooManyRequests
 }
 
 // Status returns HTTPResponse.Status
@@ -2362,6 +2378,7 @@ type MovieKeywordsResponse struct {
 	}
 	JSON401 *Unauthorized
 	JSON404 *NotFound
+	JSON429 *TooManyRequests
 }
 
 // Status returns HTTPResponse.Status
@@ -2387,6 +2404,7 @@ type MovieSimilarResponse struct {
 	JSON400      *InvalidPage
 	JSON401      *Unauthorized
 	JSON404      *NotFound
+	JSON429      *TooManyRequests
 }
 
 // Status returns HTTPResponse.Status
@@ -2411,6 +2429,7 @@ type SearchKeywordResponse struct {
 	JSON200      *ObjectListPage
 	JSON400      *InvalidPage
 	JSON401      *Unauthorized
+	JSON429      *TooManyRequests
 }
 
 // Status returns HTTPResponse.Status
@@ -2435,6 +2454,7 @@ type SearchMovieResponse struct {
 	JSON200      *MovieListPage
 	JSON400      *InvalidPage
 	JSON401      *Unauthorized
+	JSON429      *TooManyRequests
 }
 
 // Status returns HTTPResponse.Status
@@ -2459,6 +2479,7 @@ type SearchMultiResponse struct {
 	JSON200      *MultiListPage
 	JSON400      *InvalidPage
 	JSON401      *Unauthorized
+	JSON429      *TooManyRequests
 }
 
 // Status returns HTTPResponse.Status
@@ -2483,6 +2504,7 @@ type SearchPersonResponse struct {
 	JSON200      *PersonListPage
 	JSON400      *InvalidPage
 	JSON401      *Unauthorized
+	JSON429      *TooManyRequests
 }
 
 // Status returns HTTPResponse.Status
@@ -2507,6 +2529,7 @@ type SearchTVResponse struct {
 	JSON200      *TvListPage
 	JSON400      *InvalidPage
 	JSON401      *Unauthorized
+	JSON429      *TooManyRequests
 }
 
 // Status returns HTTPResponse.Status
@@ -2767,6 +2790,13 @@ func ParseCompanyDetailsResponse(rsp *http.Response) (*CompanyDetailsResponse, e
 		}
 		response.JSON404 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest TooManyRequests
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
 	}
 
 	return response, nil
@@ -2809,6 +2839,13 @@ func ParseCompanyImagesResponse(rsp *http.Response) (*CompanyImagesResponse, err
 			return nil, err
 		}
 		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest TooManyRequests
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
 
 	}
 
@@ -2854,6 +2891,13 @@ func ParseConfigurationDetailsResponse(rsp *http.Response) (*ConfigurationDetail
 		}
 		response.JSON401 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest TooManyRequests
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
 	}
 
 	return response, nil
@@ -2886,6 +2930,13 @@ func ParseConfigurationCountriesResponse(rsp *http.Response) (*ConfigurationCoun
 			return nil, err
 		}
 		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest TooManyRequests
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
 
 	}
 
@@ -2920,6 +2971,13 @@ func ParseConfigurationJobsResponse(rsp *http.Response) (*ConfigurationJobsRespo
 		}
 		response.JSON401 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest TooManyRequests
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
 	}
 
 	return response, nil
@@ -2952,6 +3010,13 @@ func ParseConfigurationLanguagesResponse(rsp *http.Response) (*ConfigurationLang
 			return nil, err
 		}
 		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest TooManyRequests
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
 
 	}
 
@@ -2986,6 +3051,13 @@ func ParseConfigurationPrimaryTranslationsResponse(rsp *http.Response) (*Configu
 		}
 		response.JSON401 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest TooManyRequests
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
 	}
 
 	return response, nil
@@ -3018,6 +3090,13 @@ func ParseConfigurationTimezonesResponse(rsp *http.Response) (*ConfigurationTime
 			return nil, err
 		}
 		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest TooManyRequests
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
 
 	}
 
@@ -3052,6 +3131,13 @@ func ParseGenreMovieListResponse(rsp *http.Response) (*GenreMovieListResponse, e
 		}
 		response.JSON401 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest TooManyRequests
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
 	}
 
 	return response, nil
@@ -3084,6 +3170,13 @@ func ParseGenreTvListResponse(rsp *http.Response) (*GenreTvListResponse, error) 
 			return nil, err
 		}
 		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest TooManyRequests
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
 
 	}
 
@@ -3124,6 +3217,13 @@ func ParseKeywordDetailsResponse(rsp *http.Response) (*KeywordDetailsResponse, e
 			return nil, err
 		}
 		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest TooManyRequests
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
 
 	}
 
@@ -3172,6 +3272,13 @@ func ParseKeywordMoviesResponse(rsp *http.Response) (*KeywordMoviesResponse, err
 		}
 		response.JSON404 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest TooManyRequests
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
 	}
 
 	return response, nil
@@ -3211,6 +3318,13 @@ func ParseMovieNowPlayingListResponse(rsp *http.Response) (*MovieNowPlayingListR
 			return nil, err
 		}
 		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest TooManyRequests
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
 
 	}
 
@@ -3252,6 +3366,13 @@ func ParseMoviePopularListResponse(rsp *http.Response) (*MoviePopularListRespons
 		}
 		response.JSON401 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest TooManyRequests
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
 	}
 
 	return response, nil
@@ -3292,6 +3413,13 @@ func ParseMovieTopRatedListResponse(rsp *http.Response) (*MovieTopRatedListRespo
 		}
 		response.JSON401 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest TooManyRequests
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
 	}
 
 	return response, nil
@@ -3331,6 +3459,13 @@ func ParseMovieUpcomingListResponse(rsp *http.Response) (*MovieUpcomingListRespo
 			return nil, err
 		}
 		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest TooManyRequests
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
 
 	}
 
@@ -3374,6 +3509,13 @@ func ParseMovieKeywordsResponse(rsp *http.Response) (*MovieKeywordsResponse, err
 			return nil, err
 		}
 		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest TooManyRequests
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
 
 	}
 
@@ -3422,6 +3564,13 @@ func ParseMovieSimilarResponse(rsp *http.Response) (*MovieSimilarResponse, error
 		}
 		response.JSON404 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest TooManyRequests
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
 	}
 
 	return response, nil
@@ -3461,6 +3610,13 @@ func ParseSearchKeywordResponse(rsp *http.Response) (*SearchKeywordResponse, err
 			return nil, err
 		}
 		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest TooManyRequests
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
 
 	}
 
@@ -3502,6 +3658,13 @@ func ParseSearchMovieResponse(rsp *http.Response) (*SearchMovieResponse, error) 
 		}
 		response.JSON401 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest TooManyRequests
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
 	}
 
 	return response, nil
@@ -3541,6 +3704,13 @@ func ParseSearchMultiResponse(rsp *http.Response) (*SearchMultiResponse, error) 
 			return nil, err
 		}
 		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest TooManyRequests
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
 
 	}
 
@@ -3582,6 +3752,13 @@ func ParseSearchPersonResponse(rsp *http.Response) (*SearchPersonResponse, error
 		}
 		response.JSON401 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest TooManyRequests
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
 	}
 
 	return response, nil
@@ -3621,6 +3798,13 @@ func ParseSearchTVResponse(rsp *http.Response) (*SearchTVResponse, error) {
 			return nil, err
 		}
 		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest TooManyRequests
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
 
 	}
 

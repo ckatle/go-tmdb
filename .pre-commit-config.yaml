@@ -4,7 +4,7 @@ repos:
     hooks:
       - id: check-json
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.27.1
+    rev: 0.27.3
     hooks:
       - id: check-jsonschema
         files: ^renovate\.json$
