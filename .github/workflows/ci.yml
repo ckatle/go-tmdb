@@ -3,5 +3,7 @@ name: CI
 on: push
 
 jobs:
-  ci:
+  vulnerability-check:
+    uses: ckatle/actions/.github/workflows/go-vuln-check.yml@master
+  lint:
     uses: ckatle/actions/.github/workflows/golangci-lint.yml@master
