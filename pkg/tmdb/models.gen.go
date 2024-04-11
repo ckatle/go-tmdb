@@ -22,6 +22,22 @@ const (
 	MediaTypeTv     MediaType = "tv"
 )
 
+// CastListItem defines model for CastListItem.
+type CastListItem struct {
+	Adult              *bool    `json:"adult,omitempty"`
+	CastId             *int     `json:"cast_id,omitempty"`
+	Character          *string  `json:"character,omitempty"`
+	CreditId           *string  `json:"credit_id,omitempty"`
+	Gender             *int     `json:"gender,omitempty"`
+	Id                 int      `json:"id"`
+	KnownForDepartment *string  `json:"known_for_department,omitempty"`
+	Name               string   `json:"name"`
+	Order              *int     `json:"order,omitempty"`
+	OriginalName       *string  `json:"original_name,omitempty"`
+	Popularity         *float32 `json:"popularity,omitempty"`
+	ProfilePath        *string  `json:"profile_path,omitempty"`
+}
+
 // Company defines model for Company.
 type Company struct {
 	Description   *string `json:"description,omitempty"`
@@ -59,6 +75,28 @@ type CountryWithTimezones struct {
 	// Iso31661 ISO 3166-1 tag
 	Iso31661 string   `json:"iso_3166_1"`
 	Zones    []string `json:"zones"`
+}
+
+// Credits defines model for Credits.
+type Credits struct {
+	Cast []CastListItem `json:"cast"`
+	Crew []CrewListItem `json:"crew"`
+	Id   *int           `json:"id,omitempty"`
+}
+
+// CrewListItem defines model for CrewListItem.
+type CrewListItem struct {
+	Adult              *bool    `json:"adult,omitempty"`
+	CreditId           *string  `json:"credit_id,omitempty"`
+	Department         *string  `json:"department,omitempty"`
+	Gender             *int     `json:"gender,omitempty"`
+	Id                 int      `json:"id"`
+	Job                *string  `json:"job,omitempty"`
+	KnownForDepartment *string  `json:"known_for_department,omitempty"`
+	Name               string   `json:"name"`
+	OriginalName       *string  `json:"original_name,omitempty"`
+	Popularity         *float32 `json:"popularity,omitempty"`
+	ProfilePath        *string  `json:"profile_path,omitempty"`
 }
 
 // Department defines model for Department.
@@ -300,6 +338,9 @@ type Query = string
 // Region defines model for Region.
 type Region = string
 
+// SeriesID defines model for SeriesID.
+type SeriesID = int32
+
 // Year defines model for Year.
 type Year = string
 
@@ -382,6 +423,12 @@ type MovieUpcomingListParams struct {
 	Region *Region `form:"region,omitempty" json:"region,omitempty"`
 }
 
+// MovieCreditsParams defines parameters for MovieCredits.
+type MovieCreditsParams struct {
+	// Language `ISO-639-1`-`ISO-3166-1` code
+	Language *LanguageParam `form:"language,omitempty" json:"language,omitempty"`
+}
+
 // MovieSimilarParams defines parameters for MovieSimilar.
 type MovieSimilarParams struct {
 	// Language `ISO-639-1`-`ISO-3166-1` code
@@ -440,6 +487,12 @@ type SearchTVParams struct {
 	Language *LanguageParam `form:"language,omitempty" json:"language,omitempty"`
 	Page     *PageParam     `form:"page,omitempty" json:"page,omitempty"`
 	Year     *Year          `form:"year,omitempty" json:"year,omitempty"`
+}
+
+// TvSeriesCreditsParams defines parameters for TvSeriesCredits.
+type TvSeriesCreditsParams struct {
+	// Language `ISO-639-1`-`ISO-3166-1` code
+	Language *LanguageParam `form:"language,omitempty" json:"language,omitempty"`
 }
 
 // AsMovieListItemWithMediaType returns the union data inside the MultiListPage_Results_Item as a MovieListItemWithMediaType
