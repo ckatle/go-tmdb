@@ -22,6 +22,19 @@ const (
 	MediaTypeTv     MediaType = "tv"
 )
 
+// Defines values for MovieDetailsParamsAppendToResponse.
+const (
+	MovieDetailsParamsAppendToResponseAlternativeTitles MovieDetailsParamsAppendToResponse = "alternative_titles"
+	MovieDetailsParamsAppendToResponseCredits           MovieDetailsParamsAppendToResponse = "credits"
+	MovieDetailsParamsAppendToResponseExternalIds       MovieDetailsParamsAppendToResponse = "external_ids"
+	MovieDetailsParamsAppendToResponseKeywords          MovieDetailsParamsAppendToResponse = "keywords"
+	MovieDetailsParamsAppendToResponseRecommendations   MovieDetailsParamsAppendToResponse = "recommendations"
+	MovieDetailsParamsAppendToResponseReleaseDates      MovieDetailsParamsAppendToResponse = "release_dates"
+	MovieDetailsParamsAppendToResponseReviews           MovieDetailsParamsAppendToResponse = "reviews"
+	MovieDetailsParamsAppendToResponseSimilar           MovieDetailsParamsAppendToResponse = "similar"
+	MovieDetailsParamsAppendToResponseTranslations      MovieDetailsParamsAppendToResponse = "translations"
+)
+
 // CastListItem defines model for CastListItem.
 type CastListItem struct {
 	Adult              *bool    `json:"adult,omitempty"`
@@ -129,6 +142,41 @@ type Media struct {
 
 // MediaType defines model for Media.media_type.
 type MediaType string
+
+// Movie defines model for Movie.
+type Movie struct {
+	Adult               *bool   `json:"adult,omitempty"`
+	BackdropPath        *string `json:"backdrop_path,omitempty"`
+	BelongsToCollection *struct {
+		BackdropPath *string `json:"backdrop_path,omitempty"`
+		Id           int     `json:"id"`
+		Name         string  `json:"name"`
+		PosterPath   *string `json:"poster_path,omitempty"`
+	} `json:"belongs_to_collection,omitempty"`
+	Budget              *int                 `json:"budget,omitempty"`
+	Genres              *[]Object            `json:"genres,omitempty"`
+	Homepage            *string              `json:"homepage,omitempty"`
+	Id                  int                  `json:"id"`
+	ImdbId              *string              `json:"imdb_id,omitempty"`
+	OriginCountry       *[]string            `json:"origin_country,omitempty"`
+	OriginalLanguage    string               `json:"original_language"`
+	OriginalTitle       string               `json:"original_title"`
+	Overview            *string              `json:"overview,omitempty"`
+	Popularity          *float32             `json:"popularity,omitempty"`
+	PosterPath          *string              `json:"poster_path,omitempty"`
+	ProductionCompanies *[]ProductionCompany `json:"production_companies,omitempty"`
+	ProductionCountries *[]ProductionCountry `json:"production_countries,omitempty"`
+	ReleaseDate         *string              `json:"release_date,omitempty"`
+	Revenue             *int                 `json:"revenue,omitempty"`
+	Runtime             *int                 `json:"runtime,omitempty"`
+	SpokenLanguages     *[]Language          `json:"spoken_languages,omitempty"`
+	Status              *string              `json:"status,omitempty"`
+	Tagline             *string              `json:"tagline,omitempty"`
+	Title               string               `json:"title"`
+	Video               *bool                `json:"video,omitempty"`
+	VoteAverage         *float32             `json:"vote_average,omitempty"`
+	VoteCount           *int                 `json:"vote_count,omitempty"`
+}
 
 // MovieListItem defines model for MovieListItem.
 type MovieListItem struct {
@@ -266,6 +314,21 @@ type PersonListPage struct {
 	TotalResults int32            `json:"total_results"`
 }
 
+// ProductionCompany defines model for ProductionCompany.
+type ProductionCompany struct {
+	Id            int     `json:"id"`
+	LogoPath      *string `json:"logo_path,omitempty"`
+	Name          string  `json:"name"`
+	OriginCountry *string `json:"origin_country,omitempty"`
+}
+
+// ProductionCountry defines model for ProductionCountry.
+type ProductionCountry struct {
+	// Iso31661 ISO 3166-1 tag
+	Iso31661 string `json:"iso_3166_1"`
+	Name     string `json:"name"`
+}
+
 // TvListItem defines model for TvListItem.
 type TvListItem struct {
 	Adult            *bool     `json:"adult,omitempty"`
@@ -322,6 +385,9 @@ type KeywordID = int32
 
 // LanguageParam defines model for LanguageParam.
 type LanguageParam = string
+
+// MovieAppendToResponse defines model for MovieAppendToResponse.
+type MovieAppendToResponse = []string
 
 // MovieID defines model for MovieID.
 type MovieID = int32
@@ -423,10 +489,29 @@ type MovieUpcomingListParams struct {
 	Region *Region `form:"region,omitempty" json:"region,omitempty"`
 }
 
+// MovieDetailsParams defines parameters for MovieDetails.
+type MovieDetailsParams struct {
+	// Language `ISO-639-1`-`ISO-3166-1` code
+	Language *LanguageParam `form:"language,omitempty" json:"language,omitempty"`
+
+	// AppendToResponse comma separated list of endpoints within this namespace, 20 items max
+	AppendToResponse *MovieAppendToResponse `form:"append_to_response,omitempty" json:"append_to_response,omitempty"`
+}
+
+// MovieDetailsParamsAppendToResponse defines parameters for MovieDetails.
+type MovieDetailsParamsAppendToResponse string
+
 // MovieCreditsParams defines parameters for MovieCredits.
 type MovieCreditsParams struct {
 	// Language `ISO-639-1`-`ISO-3166-1` code
 	Language *LanguageParam `form:"language,omitempty" json:"language,omitempty"`
+}
+
+// MovieRecommendationsParams defines parameters for MovieRecommendations.
+type MovieRecommendationsParams struct {
+	// Language `ISO-639-1`-`ISO-3166-1` code
+	Language *LanguageParam `form:"language,omitempty" json:"language,omitempty"`
+	Page     *PageParam     `form:"page,omitempty" json:"page,omitempty"`
 }
 
 // MovieSimilarParams defines parameters for MovieSimilar.

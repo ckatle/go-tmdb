@@ -136,11 +136,17 @@ type ClientInterface interface {
 	// MovieUpcomingList request
 	MovieUpcomingList(ctx context.Context, params *MovieUpcomingListParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// MovieDetails request
+	MovieDetails(ctx context.Context, movieId MovieID, params *MovieDetailsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// MovieCredits request
 	MovieCredits(ctx context.Context, movieId MovieID, params *MovieCreditsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// MovieKeywords request
 	MovieKeywords(ctx context.Context, movieId MovieID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// MovieRecommendations request
+	MovieRecommendations(ctx context.Context, movieId MovieID, params *MovieRecommendationsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// MovieSimilar request
 	MovieSimilar(ctx context.Context, movieId MovieID, params *MovieSimilarParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -356,6 +362,18 @@ func (c *Client) MovieUpcomingList(ctx context.Context, params *MovieUpcomingLis
 	return c.Client.Do(req)
 }
 
+func (c *Client) MovieDetails(ctx context.Context, movieId MovieID, params *MovieDetailsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewMovieDetailsRequest(c.Server, movieId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) MovieCredits(ctx context.Context, movieId MovieID, params *MovieCreditsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewMovieCreditsRequest(c.Server, movieId, params)
 	if err != nil {
@@ -370,6 +388,18 @@ func (c *Client) MovieCredits(ctx context.Context, movieId MovieID, params *Movi
 
 func (c *Client) MovieKeywords(ctx context.Context, movieId MovieID, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewMovieKeywordsRequest(c.Server, movieId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) MovieRecommendations(ctx context.Context, movieId MovieID, params *MovieRecommendationsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewMovieRecommendationsRequest(c.Server, movieId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -1260,6 +1290,78 @@ func NewMovieUpcomingListRequest(server string, params *MovieUpcomingListParams)
 	return req, nil
 }
 
+// NewMovieDetailsRequest generates requests for MovieDetails
+func NewMovieDetailsRequest(server string, movieId MovieID, params *MovieDetailsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "movie_id", runtime.ParamLocationPath, movieId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/movie/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Language != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "language", runtime.ParamLocationQuery, *params.Language); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.AppendToResponse != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "append_to_response", runtime.ParamLocationQuery, *params.AppendToResponse); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewMovieCreditsRequest generates requests for MovieCredits
 func NewMovieCreditsRequest(server string, movieId MovieID, params *MovieCreditsParams) (*http.Request, error) {
 	var err error
@@ -1340,6 +1442,78 @@ func NewMovieKeywordsRequest(server string, movieId MovieID) (*http.Request, err
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewMovieRecommendationsRequest generates requests for MovieRecommendations
+func NewMovieRecommendationsRequest(server string, movieId MovieID, params *MovieRecommendationsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "movie_id", runtime.ParamLocationPath, movieId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/movie/%s/recommendations", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Language != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "language", runtime.ParamLocationQuery, *params.Language); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Page != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "page", runtime.ParamLocationQuery, *params.Page); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
@@ -2082,11 +2256,17 @@ type ClientWithResponsesInterface interface {
 	// MovieUpcomingListWithResponse request
 	MovieUpcomingListWithResponse(ctx context.Context, params *MovieUpcomingListParams, reqEditors ...RequestEditorFn) (*MovieUpcomingListResponse, error)
 
+	// MovieDetailsWithResponse request
+	MovieDetailsWithResponse(ctx context.Context, movieId MovieID, params *MovieDetailsParams, reqEditors ...RequestEditorFn) (*MovieDetailsResponse, error)
+
 	// MovieCreditsWithResponse request
 	MovieCreditsWithResponse(ctx context.Context, movieId MovieID, params *MovieCreditsParams, reqEditors ...RequestEditorFn) (*MovieCreditsResponse, error)
 
 	// MovieKeywordsWithResponse request
 	MovieKeywordsWithResponse(ctx context.Context, movieId MovieID, reqEditors ...RequestEditorFn) (*MovieKeywordsResponse, error)
+
+	// MovieRecommendationsWithResponse request
+	MovieRecommendationsWithResponse(ctx context.Context, movieId MovieID, params *MovieRecommendationsParams, reqEditors ...RequestEditorFn) (*MovieRecommendationsResponse, error)
 
 	// MovieSimilarWithResponse request
 	MovieSimilarWithResponse(ctx context.Context, movieId MovieID, params *MovieSimilarParams, reqEditors ...RequestEditorFn) (*MovieSimilarResponse, error)
@@ -2517,6 +2697,32 @@ func (r MovieUpcomingListResponse) StatusCode() int {
 	return 0
 }
 
+type MovieDetailsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Movie
+	JSON400      *InvalidPage
+	JSON401      *Unauthorized
+	JSON404      *NotFound
+	JSON429      *TooManyRequests
+}
+
+// Status returns HTTPResponse.Status
+func (r MovieDetailsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r MovieDetailsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type MovieCreditsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -2565,6 +2771,32 @@ func (r MovieKeywordsResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r MovieKeywordsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type MovieRecommendationsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *MovieListPage
+	JSON400      *InvalidPage
+	JSON401      *Unauthorized
+	JSON404      *NotFound
+	JSON429      *TooManyRequests
+}
+
+// Status returns HTTPResponse.Status
+func (r MovieRecommendationsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r MovieRecommendationsResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -2892,6 +3124,15 @@ func (c *ClientWithResponses) MovieUpcomingListWithResponse(ctx context.Context,
 	return ParseMovieUpcomingListResponse(rsp)
 }
 
+// MovieDetailsWithResponse request returning *MovieDetailsResponse
+func (c *ClientWithResponses) MovieDetailsWithResponse(ctx context.Context, movieId MovieID, params *MovieDetailsParams, reqEditors ...RequestEditorFn) (*MovieDetailsResponse, error) {
+	rsp, err := c.MovieDetails(ctx, movieId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseMovieDetailsResponse(rsp)
+}
+
 // MovieCreditsWithResponse request returning *MovieCreditsResponse
 func (c *ClientWithResponses) MovieCreditsWithResponse(ctx context.Context, movieId MovieID, params *MovieCreditsParams, reqEditors ...RequestEditorFn) (*MovieCreditsResponse, error) {
 	rsp, err := c.MovieCredits(ctx, movieId, params, reqEditors...)
@@ -2908,6 +3149,15 @@ func (c *ClientWithResponses) MovieKeywordsWithResponse(ctx context.Context, mov
 		return nil, err
 	}
 	return ParseMovieKeywordsResponse(rsp)
+}
+
+// MovieRecommendationsWithResponse request returning *MovieRecommendationsResponse
+func (c *ClientWithResponses) MovieRecommendationsWithResponse(ctx context.Context, movieId MovieID, params *MovieRecommendationsParams, reqEditors ...RequestEditorFn) (*MovieRecommendationsResponse, error) {
+	rsp, err := c.MovieRecommendations(ctx, movieId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseMovieRecommendationsResponse(rsp)
 }
 
 // MovieSimilarWithResponse request returning *MovieSimilarResponse
@@ -3690,6 +3940,60 @@ func ParseMovieUpcomingListResponse(rsp *http.Response) (*MovieUpcomingListRespo
 	return response, nil
 }
 
+// ParseMovieDetailsResponse parses an HTTP response from a MovieDetailsWithResponse call
+func ParseMovieDetailsResponse(rsp *http.Response) (*MovieDetailsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &MovieDetailsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Movie
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest InvalidPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest TooManyRequests
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseMovieCreditsResponse parses an HTTP response from a MovieCreditsWithResponse call
 func ParseMovieCreditsResponse(rsp *http.Response) (*MovieCreditsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -3767,6 +4071,60 @@ func ParseMovieKeywordsResponse(rsp *http.Response) (*MovieKeywordsResponse, err
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest TooManyRequests
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseMovieRecommendationsResponse parses an HTTP response from a MovieRecommendationsWithResponse call
+func ParseMovieRecommendationsResponse(rsp *http.Response) (*MovieRecommendationsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &MovieRecommendationsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest MovieListPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest InvalidPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
 		var dest Unauthorized
