@@ -1,6 +1,6 @@
 module github.com/ckatle/go-tmdb
 
-go 1.22.0
+go 1.22.2
 
 require github.com/oapi-codegen/runtime v1.1.1
 
