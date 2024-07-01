@@ -5,7 +5,7 @@ clean:
 	@go clean -modcache
 
 generate: ## generate client code from openapi.yml
-	@go install github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen@latest
+	@go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
 	@rm ./pkg/tmdb/*
 	@oapi-codegen --config=./configs/api/models.yml ./api/openapi.yml
 	@oapi-codegen --config=./configs/api/client.yml ./api/openapi.yml
