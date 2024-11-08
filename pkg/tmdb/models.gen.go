@@ -35,14 +35,30 @@ const (
 	MovieDetailsParamsAppendToResponseTranslations      MovieDetailsParamsAppendToResponse = "translations"
 )
 
+// Defines values for TvSeriesDetailsParamsAppendToResponse.
+const (
+	TvSeriesDetailsParamsAppendToResponseAggregateCredits  TvSeriesDetailsParamsAppendToResponse = "aggregate_credits"
+	TvSeriesDetailsParamsAppendToResponseAlternativeTitles TvSeriesDetailsParamsAppendToResponse = "alternative_titles"
+	TvSeriesDetailsParamsAppendToResponseCredits           TvSeriesDetailsParamsAppendToResponse = "credits"
+	TvSeriesDetailsParamsAppendToResponseEpisodeGroups     TvSeriesDetailsParamsAppendToResponse = "episode_groups"
+	TvSeriesDetailsParamsAppendToResponseExternalIds       TvSeriesDetailsParamsAppendToResponse = "external_ids"
+	TvSeriesDetailsParamsAppendToResponseKeywords          TvSeriesDetailsParamsAppendToResponse = "keywords"
+	TvSeriesDetailsParamsAppendToResponseRecommendations   TvSeriesDetailsParamsAppendToResponse = "recommendations"
+	TvSeriesDetailsParamsAppendToResponseReviews           TvSeriesDetailsParamsAppendToResponse = "reviews"
+	TvSeriesDetailsParamsAppendToResponseSimilar           TvSeriesDetailsParamsAppendToResponse = "similar"
+	TvSeriesDetailsParamsAppendToResponseTranslations      TvSeriesDetailsParamsAppendToResponse = "translations"
+)
+
 // CastListItem defines model for CastListItem.
 type CastListItem struct {
-	Adult              *bool    `json:"adult,omitempty"`
-	CastId             *int     `json:"cast_id,omitempty"`
-	Character          *string  `json:"character,omitempty"`
-	CreditId           *string  `json:"credit_id,omitempty"`
-	Gender             *int     `json:"gender,omitempty"`
-	Id                 int      `json:"id"`
+	Adult     *bool   `json:"adult,omitempty"`
+	CastId    *int    `json:"cast_id,omitempty"`
+	Character *string `json:"character,omitempty"`
+	CreditId  *string `json:"credit_id,omitempty"`
+	Gender    *int32  `json:"gender,omitempty"`
+
+	// Id The identifier property represents any kind of identifier for any kind of [Thing](https://schema.org/Thing), such as ISBNs, GTIN codes, UUIDs etc.
+	Id                 int32    `json:"id"`
 	KnownForDepartment *string  `json:"known_for_department,omitempty"`
 	Name               string   `json:"name"`
 	Order              *int     `json:"order,omitempty"`
@@ -153,6 +169,33 @@ type CountryWithTimezones struct {
 	Zones    []string    `json:"zones"`
 }
 
+// Creator defines model for Creator.
+type Creator struct {
+	CreditId *string `json:"credit_id,omitempty"`
+	Gender   *int32  `json:"gender,omitempty"`
+
+	// Id The identifier property represents any kind of identifier for any kind of [Thing](https://schema.org/Thing), such as ISBNs, GTIN codes, UUIDs etc.
+	Id           int32   `json:"id"`
+	Name         string  `json:"name"`
+	OriginalName *string `json:"original_name,omitempty"`
+	ProfilePath  *string `json:"profile_path,omitempty"`
+}
+
+// CreditBase defines model for CreditBase.
+type CreditBase struct {
+	Adult    *bool   `json:"adult,omitempty"`
+	CreditId *string `json:"credit_id,omitempty"`
+	Gender   *int32  `json:"gender,omitempty"`
+
+	// Id The identifier property represents any kind of identifier for any kind of [Thing](https://schema.org/Thing), such as ISBNs, GTIN codes, UUIDs etc.
+	Id                 int32    `json:"id"`
+	KnownForDepartment *string  `json:"known_for_department,omitempty"`
+	Name               string   `json:"name"`
+	OriginalName       *string  `json:"original_name,omitempty"`
+	Popularity         *float32 `json:"popularity,omitempty"`
+	ProfilePath        *string  `json:"profile_path,omitempty"`
+}
+
 // Credits defines model for Credits.
 type Credits struct {
 	Cast []CastListItem `json:"cast"`
@@ -162,11 +205,13 @@ type Credits struct {
 
 // CrewListItem defines model for CrewListItem.
 type CrewListItem struct {
-	Adult              *bool    `json:"adult,omitempty"`
-	CreditId           *string  `json:"credit_id,omitempty"`
-	Department         *string  `json:"department,omitempty"`
-	Gender             *int     `json:"gender,omitempty"`
-	Id                 int      `json:"id"`
+	Adult      *bool   `json:"adult,omitempty"`
+	CreditId   *string `json:"credit_id,omitempty"`
+	Department *string `json:"department,omitempty"`
+	Gender     *int32  `json:"gender,omitempty"`
+
+	// Id The identifier property represents any kind of identifier for any kind of [Thing](https://schema.org/Thing), such as ISBNs, GTIN codes, UUIDs etc.
+	Id                 int32    `json:"id"`
 	Job                *string  `json:"job,omitempty"`
 	KnownForDepartment *string  `json:"known_for_department,omitempty"`
 	Name               string   `json:"name"`
@@ -395,41 +440,81 @@ type ResultPage struct {
 	TotalResults int `json:"total_results"`
 }
 
+// TvBase defines model for TvBase.
+type TvBase struct {
+	Adult        *bool               `json:"adult,omitempty"`
+	BackdropPath *string             `json:"backdrop_path,omitempty"`
+	FirstAirDate *openapi_types.Date `json:"first_air_date,omitempty"`
+
+	// Id The identifier property represents any kind of identifier for any kind of [Thing](https://schema.org/Thing), such as ISBNs, GTIN codes, UUIDs etc.
+	Id               int32          `json:"id"`
+	Name             string         `json:"name"`
+	OriginCountry    *[]CountryCode `json:"origin_country,omitempty"`
+	OriginalLanguage string         `json:"original_language"`
+	OriginalName     string         `json:"original_name"`
+	Overview         *string        `json:"overview,omitempty"`
+	Popularity       *float32       `json:"popularity,omitempty"`
+	PosterPath       *string        `json:"poster_path,omitempty"`
+	VoteAverage      *float32       `json:"vote_average,omitempty"`
+	VoteCount        *int           `json:"vote_count,omitempty"`
+}
+
+// TvEpisodeBase defines model for TvEpisodeBase.
+type TvEpisodeBase struct {
+	AirDate       *openapi_types.Date `json:"air_date,omitempty"`
+	EpisodeNumber *int32              `json:"episode_number,omitempty"`
+
+	// Id The identifier property represents any kind of identifier for any kind of [Thing](https://schema.org/Thing), such as ISBNs, GTIN codes, UUIDs etc.
+	Id             int32    `json:"id"`
+	Name           string   `json:"name"`
+	Overview       *string  `json:"overview,omitempty"`
+	ProductionCode *string  `json:"production_code,omitempty"`
+	Runtime        *int32   `json:"runtime,omitempty"`
+	SeasonNumber   *int32   `json:"season_number,omitempty"`
+	StillPath      *string  `json:"still_path,omitempty"`
+	VoteAverage    *float32 `json:"vote_average,omitempty"`
+	VoteCount      *int     `json:"vote_count,omitempty"`
+}
+
 // TvListItem defines model for TvListItem.
 type TvListItem struct {
-	Adult            *bool               `json:"adult,omitempty"`
-	BackdropPath     *string             `json:"backdrop_path,omitempty"`
-	FirstAirDate     *openapi_types.Date `json:"first_air_date,omitempty"`
-	GenreIds         *[]int32            `json:"genre_ids,omitempty"`
-	Id               int                 `json:"id"`
-	Name             string              `json:"name"`
-	OriginCountry    *[]string           `json:"origin_country,omitempty"`
-	OriginalLanguage string              `json:"original_language"`
-	OriginalName     string              `json:"original_name"`
-	Overview         *string             `json:"overview,omitempty"`
-	Popularity       *float32            `json:"popularity,omitempty"`
-	PosterPath       *string             `json:"poster_path,omitempty"`
-	VoteAverage      *float32            `json:"vote_average,omitempty"`
-	VoteCount        *int                `json:"vote_count,omitempty"`
+	Adult        *bool               `json:"adult,omitempty"`
+	BackdropPath *string             `json:"backdrop_path,omitempty"`
+	FirstAirDate *openapi_types.Date `json:"first_air_date,omitempty"`
+	GenreIds     *[]int32            `json:"genre_ids,omitempty"`
+
+	// Id The identifier property represents any kind of identifier for any kind of [Thing](https://schema.org/Thing), such as ISBNs, GTIN codes, UUIDs etc.
+	Id               int32          `json:"id"`
+	Name             string         `json:"name"`
+	OriginCountry    *[]CountryCode `json:"origin_country,omitempty"`
+	OriginalLanguage string         `json:"original_language"`
+	OriginalName     string         `json:"original_name"`
+	Overview         *string        `json:"overview,omitempty"`
+	Popularity       *float32       `json:"popularity,omitempty"`
+	PosterPath       *string        `json:"poster_path,omitempty"`
+	VoteAverage      *float32       `json:"vote_average,omitempty"`
+	VoteCount        *int           `json:"vote_count,omitempty"`
 }
 
 // TvListItemWithMediaType defines model for TvListItemWithMediaType.
 type TvListItemWithMediaType struct {
-	Adult            *bool               `json:"adult,omitempty"`
-	BackdropPath     *string             `json:"backdrop_path,omitempty"`
-	FirstAirDate     *openapi_types.Date `json:"first_air_date,omitempty"`
-	GenreIds         *[]int32            `json:"genre_ids,omitempty"`
-	Id               int                 `json:"id"`
-	MediaType        MediaType           `json:"media_type"`
-	Name             string              `json:"name"`
-	OriginCountry    *[]string           `json:"origin_country,omitempty"`
-	OriginalLanguage string              `json:"original_language"`
-	OriginalName     string              `json:"original_name"`
-	Overview         *string             `json:"overview,omitempty"`
-	Popularity       *float32            `json:"popularity,omitempty"`
-	PosterPath       *string             `json:"poster_path,omitempty"`
-	VoteAverage      *float32            `json:"vote_average,omitempty"`
-	VoteCount        *int                `json:"vote_count,omitempty"`
+	Adult        *bool               `json:"adult,omitempty"`
+	BackdropPath *string             `json:"backdrop_path,omitempty"`
+	FirstAirDate *openapi_types.Date `json:"first_air_date,omitempty"`
+	GenreIds     *[]int32            `json:"genre_ids,omitempty"`
+
+	// Id The identifier property represents any kind of identifier for any kind of [Thing](https://schema.org/Thing), such as ISBNs, GTIN codes, UUIDs etc.
+	Id               int32          `json:"id"`
+	MediaType        MediaType      `json:"media_type"`
+	Name             string         `json:"name"`
+	OriginCountry    *[]CountryCode `json:"origin_country,omitempty"`
+	OriginalLanguage string         `json:"original_language"`
+	OriginalName     string         `json:"original_name"`
+	Overview         *string        `json:"overview,omitempty"`
+	Popularity       *float32       `json:"popularity,omitempty"`
+	PosterPath       *string        `json:"poster_path,omitempty"`
+	VoteAverage      *float32       `json:"vote_average,omitempty"`
+	VoteCount        *int           `json:"vote_count,omitempty"`
 }
 
 // TvListPage defines model for TvListPage.
@@ -438,6 +523,90 @@ type TvListPage struct {
 	Results      []TvListItem `json:"results"`
 	TotalPages   int          `json:"total_pages"`
 	TotalResults int          `json:"total_results"`
+}
+
+// TvSeasonBase defines model for TvSeasonBase.
+type TvSeasonBase struct {
+	AirDate *openapi_types.Date `json:"air_date,omitempty"`
+
+	// Id The identifier property represents any kind of identifier for any kind of [Thing](https://schema.org/Thing), such as ISBNs, GTIN codes, UUIDs etc.
+	Id           int32    `json:"id"`
+	Name         string   `json:"name"`
+	Overview     *string  `json:"overview,omitempty"`
+	PosterPath   *string  `json:"poster_path,omitempty"`
+	SeasonNumber *int32   `json:"season_number,omitempty"`
+	VoteAverage  *float32 `json:"vote_average,omitempty"`
+}
+
+// TvSeries defines model for TvSeries.
+type TvSeries struct {
+	Adult          *bool               `json:"adult,omitempty"`
+	BackdropPath   *string             `json:"backdrop_path,omitempty"`
+	CreatedBy      *[]Creator          `json:"created_by,omitempty"`
+	EpisodeRunTime *interface{}        `json:"episode_run_time,omitempty"`
+	FirstAirDate   *openapi_types.Date `json:"first_air_date,omitempty"`
+	Genres         *[]Object           `json:"genres,omitempty"`
+	Homepage       *string             `json:"homepage,omitempty"`
+
+	// Id The identifier property represents any kind of identifier for any kind of [Thing](https://schema.org/Thing), such as ISBNs, GTIN codes, UUIDs etc.
+	Id                  int32                `json:"id"`
+	InProduction        *bool                `json:"in_production,omitempty"`
+	Languages           *[]string            `json:"languages,omitempty"`
+	LastAirDate         *openapi_types.Date  `json:"last_air_date,omitempty"`
+	LastEpisodeToAir    *TvSeriesEpisode     `json:"last_episode_to_air,omitempty"`
+	Name                string               `json:"name"`
+	Networks            *[]CompanyBase       `json:"networks,omitempty"`
+	NextEpisodeToAir    *TvSeriesEpisode     `json:"next_episode_to_air,omitempty"`
+	NumberOfEpisodes    *int32               `json:"number_of_episodes,omitempty"`
+	NumberOfSeasons     *int32               `json:"number_of_seasons,omitempty"`
+	OriginCountry       *[]CountryCode       `json:"origin_country,omitempty"`
+	OriginalLanguage    string               `json:"original_language"`
+	OriginalName        string               `json:"original_name"`
+	Overview            *string              `json:"overview,omitempty"`
+	Popularity          *float32             `json:"popularity,omitempty"`
+	PosterPath          *string              `json:"poster_path,omitempty"`
+	ProductionCompanies *[]CompanyBase       `json:"production_companies,omitempty"`
+	ProductionCountries *[]ProductionCountry `json:"production_countries,omitempty"`
+	Seasons             *[]TvSeriesSeason    `json:"seasons,omitempty"`
+	SpokenLanguages     *[]Language          `json:"spoken_languages,omitempty"`
+	Status              *string              `json:"status,omitempty"`
+	Tagline             *string              `json:"tagline,omitempty"`
+	Type                *string              `json:"type,omitempty"`
+	VoteAverage         *float32             `json:"vote_average,omitempty"`
+	VoteCount           *int                 `json:"vote_count,omitempty"`
+}
+
+// TvSeriesEpisode defines model for TvSeriesEpisode.
+type TvSeriesEpisode struct {
+	AirDate       *openapi_types.Date `json:"air_date,omitempty"`
+	EpisodeNumber *int32              `json:"episode_number,omitempty"`
+	EpisodeType   *string             `json:"episode_type,omitempty"`
+
+	// Id The identifier property represents any kind of identifier for any kind of [Thing](https://schema.org/Thing), such as ISBNs, GTIN codes, UUIDs etc.
+	Id             int32    `json:"id"`
+	Name           string   `json:"name"`
+	Overview       *string  `json:"overview,omitempty"`
+	ProductionCode *string  `json:"production_code,omitempty"`
+	Runtime        *int32   `json:"runtime,omitempty"`
+	SeasonNumber   *int32   `json:"season_number,omitempty"`
+	ShowId         *int32   `json:"show_id,omitempty"`
+	StillPath      *string  `json:"still_path,omitempty"`
+	VoteAverage    *float32 `json:"vote_average,omitempty"`
+	VoteCount      *int     `json:"vote_count,omitempty"`
+}
+
+// TvSeriesSeason defines model for TvSeriesSeason.
+type TvSeriesSeason struct {
+	AirDate      *openapi_types.Date `json:"air_date,omitempty"`
+	EpisodeCount *int32              `json:"episode_count,omitempty"`
+
+	// Id The identifier property represents any kind of identifier for any kind of [Thing](https://schema.org/Thing), such as ISBNs, GTIN codes, UUIDs etc.
+	Id           int32    `json:"id"`
+	Name         string   `json:"name"`
+	Overview     *string  `json:"overview,omitempty"`
+	PosterPath   *string  `json:"poster_path,omitempty"`
+	SeasonNumber *int32   `json:"season_number,omitempty"`
+	VoteAverage  *float32 `json:"vote_average,omitempty"`
 }
 
 // CollectionID defines model for CollectionID.
@@ -661,6 +830,18 @@ type SearchTVParams struct {
 	Page     *PageParam     `form:"page,omitempty" json:"page,omitempty"`
 	Year     *Year          `form:"year,omitempty" json:"year,omitempty"`
 }
+
+// TvSeriesDetailsParams defines parameters for TvSeriesDetails.
+type TvSeriesDetailsParams struct {
+	// Language `ISO-639-1`-`ISO-3166-1` code
+	Language *LanguageParam `form:"language,omitempty" json:"language,omitempty"`
+
+	// AppendToResponse comma separated list of endpoints within this namespace, 20 items max
+	AppendToResponse *[]TvSeriesDetailsParamsAppendToResponse `form:"append_to_response,omitempty" json:"append_to_response,omitempty"`
+}
+
+// TvSeriesDetailsParamsAppendToResponse defines parameters for TvSeriesDetails.
+type TvSeriesDetailsParamsAppendToResponse string
 
 // TvSeriesCreditsParams defines parameters for TvSeriesCredits.
 type TvSeriesCreditsParams struct {

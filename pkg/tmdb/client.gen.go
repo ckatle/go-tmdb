@@ -172,6 +172,9 @@ type ClientInterface interface {
 	// SearchTV request
 	SearchTV(ctx context.Context, params *SearchTVParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// TvSeriesDetails request
+	TvSeriesDetails(ctx context.Context, seriesId SeriesID, params *TvSeriesDetailsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// TvSeriesCredits request
 	TvSeriesCredits(ctx context.Context, seriesId SeriesID, params *TvSeriesCreditsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
@@ -502,6 +505,18 @@ func (c *Client) SearchPerson(ctx context.Context, params *SearchPersonParams, r
 
 func (c *Client) SearchTV(ctx context.Context, params *SearchTVParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSearchTVRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) TvSeriesDetails(ctx context.Context, seriesId SeriesID, params *TvSeriesDetailsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewTvSeriesDetailsRequest(c.Server, seriesId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -2304,6 +2319,78 @@ func NewSearchTVRequest(server string, params *SearchTVParams) (*http.Request, e
 	return req, nil
 }
 
+// NewTvSeriesDetailsRequest generates requests for TvSeriesDetails
+func NewTvSeriesDetailsRequest(server string, seriesId SeriesID, params *TvSeriesDetailsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "series_id", runtime.ParamLocationPath, seriesId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/tv/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Language != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "language", runtime.ParamLocationQuery, *params.Language); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.AppendToResponse != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "append_to_response", runtime.ParamLocationQuery, *params.AppendToResponse); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewTvSeriesCreditsRequest generates requests for TvSeriesCredits
 func NewTvSeriesCreditsRequest(server string, seriesId SeriesID, params *TvSeriesCreditsParams) (*http.Request, error) {
 	var err error
@@ -2486,6 +2573,9 @@ type ClientWithResponsesInterface interface {
 
 	// SearchTVWithResponse request
 	SearchTVWithResponse(ctx context.Context, params *SearchTVParams, reqEditors ...RequestEditorFn) (*SearchTVResponse, error)
+
+	// TvSeriesDetailsWithResponse request
+	TvSeriesDetailsWithResponse(ctx context.Context, seriesId SeriesID, params *TvSeriesDetailsParams, reqEditors ...RequestEditorFn) (*TvSeriesDetailsResponse, error)
 
 	// TvSeriesCreditsWithResponse request
 	TvSeriesCreditsWithResponse(ctx context.Context, seriesId SeriesID, params *TvSeriesCreditsParams, reqEditors ...RequestEditorFn) (*TvSeriesCreditsResponse, error)
@@ -3204,11 +3294,35 @@ func (r SearchTVResponse) StatusCode() int {
 	return 0
 }
 
+type TvSeriesDetailsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *TvSeries
+	JSON401      *Unauthorized
+	JSON404      *NotFound
+	JSON429      *TooManyRequests
+}
+
+// Status returns HTTPResponse.Status
+func (r TvSeriesDetailsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r TvSeriesDetailsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type TvSeriesCreditsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *Credits
-	JSON400      *InvalidPage
 	JSON401      *Unauthorized
 	JSON404      *NotFound
 	JSON429      *TooManyRequests
@@ -3480,6 +3594,15 @@ func (c *ClientWithResponses) SearchTVWithResponse(ctx context.Context, params *
 		return nil, err
 	}
 	return ParseSearchTVResponse(rsp)
+}
+
+// TvSeriesDetailsWithResponse request returning *TvSeriesDetailsResponse
+func (c *ClientWithResponses) TvSeriesDetailsWithResponse(ctx context.Context, seriesId SeriesID, params *TvSeriesDetailsParams, reqEditors ...RequestEditorFn) (*TvSeriesDetailsResponse, error) {
+	rsp, err := c.TvSeriesDetails(ctx, seriesId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseTvSeriesDetailsResponse(rsp)
 }
 
 // TvSeriesCreditsWithResponse request returning *TvSeriesCreditsResponse
@@ -4796,6 +4919,53 @@ func ParseSearchTVResponse(rsp *http.Response) (*SearchTVResponse, error) {
 	return response, nil
 }
 
+// ParseTvSeriesDetailsResponse parses an HTTP response from a TvSeriesDetailsWithResponse call
+func ParseTvSeriesDetailsResponse(rsp *http.Response) (*TvSeriesDetailsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &TvSeriesDetailsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest TvSeries
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest TooManyRequests
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseTvSeriesCreditsResponse parses an HTTP response from a TvSeriesCreditsWithResponse call
 func ParseTvSeriesCreditsResponse(rsp *http.Response) (*TvSeriesCreditsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -4816,13 +4986,6 @@ func ParseTvSeriesCreditsResponse(rsp *http.Response) (*TvSeriesCreditsResponse,
 			return nil, err
 		}
 		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
-		var dest InvalidPage
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON400 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
 		var dest Unauthorized
